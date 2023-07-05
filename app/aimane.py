@@ -1,5 +1,6 @@
 import datetime
 import json
+import random
 import cv2
 import os
 import shutil
@@ -453,24 +454,35 @@ class AiMane:
                 self.save_image(test_images[idx], filename)
 
     def test_model_live(self, image):
-        # The format is data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACt...
-        # We need to remove the first part of the string to get the base64 string
-        image_bytes = base64.b64decode(image.split(",")[1])
-        # Convert the base64 string 
-        image_stream = io.BytesIO(image_bytes)
-        #Image data is png format so we need to convert it to jpg
+        image_data = image.read()  # Retrieve the bytes data from the FileStorage object
+        image_stream = io.BytesIO(image_data)
         image = Image.open(image_stream)
+        # Convert to grayscale
+        image = image.convert("L")
         image = image.resize((28, 28))
+        # Convert to numpy array
         image = np.array(image)
-        
+
         model = load_model("model/model.h5")
         test_images = np.array(image).reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0
 
         predictions = model.predict(test_images)
         predictions = np.argmax(predictions, axis=1)
+        self.sysmane.write_status("Prediction is {} , other predictions are {}".format(predictions[0], predictions), stage="Prediction", percentage=0)
+        # Save the image to the result folder
+        os.makedirs("result", exist_ok=True)
+        for i in range(10):
+            os.makedirs("result/{}".format(i), exist_ok=True)
+        filename = "result/{}/{}.png".format(predictions[0], random.randint(0, 100000))
+        self.save_image(image, filename)
 
         return predictions
     
+
+    # # If prediction is wrong Add the image to the training set
+    # def add_image_to_training_set(self, image, label):
+    #     # Code here
+
 
     def get_current_time(self):
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

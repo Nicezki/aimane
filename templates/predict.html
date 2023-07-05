@@ -25,10 +25,17 @@
 
         function predict() {
             var dataURL = canvas.toDataURL();
+            var blob = dataURLtoBlob(dataURL);
+
+            var formData = new FormData();
+            formData.append('image', blob, 'image.png');
+
             $.ajax({
                 type: "POST",
                 url: "/api/predict",
-                data: { image: dataURL },
+                data: formData,
+                contentType: false,
+                processData: false,
                 success: function(response) {
                     $("#prediction").text("Prediction: " + response.prediction);
                 },
@@ -45,6 +52,20 @@
         function changeBrushSize() {
             var sliderValue = document.getElementById("brushSizeSlider").value;
             canvas.freeDrawingBrush.width = parseInt(sliderValue);
+        }
+
+        function dataURLtoBlob(dataURL) {
+            var parts = dataURL.split(';base64,');
+            var contentType = parts[0].split(':')[1];
+            var raw = window.atob(parts[1]);
+            var rawLength = raw.length;
+            var uInt8Array = new Uint8Array(rawLength);
+
+            for (var i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+
+            return new Blob([uInt8Array], { type: contentType });
         }
     </script>
 </body>

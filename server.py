@@ -93,22 +93,19 @@ def train_status():
 
 
 
-
 @app.route('/api/predict', methods=['POST'])
 def predict():
     # Get image from the POST request
-    # Image is encoded in base64 format
-    if request.method == 'POST' and request.data is not None:
-        image_data = request.data.decode('utf-8')
-        
-    else:
-        return jsonify({'error': 'Invalid request', 'data': {}}), 400
+    image = request.files['image']
 
+    # Make prediction
+    result = aimane.test_model_live(image)
 
-    prediction = aimane.test_model_live(image_data)
-    
-    # Return prediction result
-    return jsonify({'prediction': prediction}), 200
+    # Convert ndarray to list
+    result = result.tolist()
+
+    # Return result in JSON format
+    return jsonify(result)
 
 
 
