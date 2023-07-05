@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Handwritten Digit Recognition</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.3.0/fabric.min.js"></script>
+</head>
+<body>
+    <h1>Handwritten Digit Recognition</h1>
+    <canvas id="canvas" width="280" height="280" style="border:1px solid #000000;"></canvas>
+    <br>
+    <button onclick="predict()">Predict</button>
+    <button onclick="resetCanvas()">Reset</button>
+    <br>
+    <input type="range" min="1" max="20" value="10" id="brushSizeSlider" onchange="changeBrushSize()">
+    <label for="brushSizeSlider">Brush Size</label>
+    <br>
+    <p id="prediction"></p>
+
+    <script>
+        var canvas = new fabric.Canvas('canvas');
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.width = 10;
+        canvas.freeDrawingBrush.color = "black";
+
+        function predict() {
+            var dataURL = canvas.toDataURL();
+            $.ajax({
+                type: "POST",
+                url: "/api/predict",
+                data: { image: dataURL },
+                success: function(response) {
+                    $("#prediction").text("Prediction: " + response.prediction);
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
+        function resetCanvas() {
+            canvas.clear();
+        }
+
+        function changeBrushSize() {
+            var sliderValue = document.getElementById("brushSizeSlider").value;
+            canvas.freeDrawingBrush.width = parseInt(sliderValue);
+        }
+    </script>
+</body>
+</html>
