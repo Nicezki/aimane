@@ -1,4 +1,4 @@
-import asyncio
+import time
 from flask import Flask, request, jsonify, Response
 from app import aimane
 from flask import request, render_template
@@ -30,15 +30,13 @@ prev_status = None
 @app.route('/api/sse/status', methods=['GET'])
 def sse_status():
     def gen():
-        global prev_status  # Use the previously defined prev_status variable
+        prev_status = None  # Initialize prev_status within the generator function
         while True:
             status = aimane.get_status()
             if status is not None and status != prev_status:
                 yield 'data: {}\n\n'.format(status)
                 prev_status = status  # Update the previous status
-            else:
-                yield ''
-            asyncio.sleep(0.5)
+            time.sleep(0.5)
 
     return Response(gen(), mimetype='text/event-stream')
 
@@ -124,9 +122,13 @@ def index():
     return render_template('test.html')
 
 
-# Initialize the app
+# # Initialize the app
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
 
 
 

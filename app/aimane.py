@@ -502,23 +502,22 @@ class VerboseCallback(Callback):
     def __init__(self, sysname):
         super(VerboseCallback, self).__init__()
         self.sysname = sysname
+        self.percentage = 0
 
 
     def on_batch_end(self, batch, logs=None):
         if logs is not None and "loss" in logs and "accuracy" in logs:
-            print("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]))
-
+            # print("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]))
             percentage = (batch + 1) / 60000 * 100
-            # You can now use the `sysname` object here
-            self.sysname.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), stage="Training model", percentage=percentage)
+            percentage = round(percentage + self.percentage, 3)
+            self.sysname.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=percentage)
 
     def on_epoch_end(self, epoch, logs=None):
         if logs is not None and "loss" in logs and "accuracy" in logs:
             print("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]))
-
+            self.percentage = (epoch + 1) / 10 * 100
             percentage = (epoch + 1) / 10 * 100
-            # You can now use the `sysname` object here
-            self.sysname.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model", percentage=percentage)
+            self.sysname.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
 
 # # Create an instance of the VerboseCallback class, passing the `sysname` object
 # verbose_callback = VerboseCallback(sysname)
