@@ -22,6 +22,17 @@ def getstatus():
     status = aimane.get_status()
     return status
 
+
+# Route will be
+# /api/copyuc
+@app.route('/api/restouc', methods=['GET'])
+def copyuc():
+    status = aimane.copy_result_to_usercontent()
+    return "Copy result to usercontent successful!"
+
+
+
+
 # Server Sent Event
 # Route will be
 # /api/sse/status
@@ -53,11 +64,6 @@ def sse_status():
 
 @app.route('/api/prepare', methods=['GET'])
 def prepare():
-    
-    # Get force from the query string
-    force = request.args.get('force')
-    # Start the preparation process in a separate task
-    # aimane.prepare_dataset(force)
     aimane.stage_1()
     # Prepare dataset
     # result = 
@@ -108,6 +114,11 @@ def predict():
     return jsonify(result)
 
 
+# @app.route('/api/predict-lab', methods=['GET'])
+# # Same as predict but user provide the label also to check if the prediction is correct
+# def predict_lab():
+
+
 
 @app.route('/predict', methods=['GET'])
 def predict_page():
@@ -126,6 +137,9 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
+    # Listen at 0.0.0.0:5000
+
+    
 
 
 

@@ -74,9 +74,9 @@ class SysMane:
         # Create empty files if they don't exist
         files = [
             ('{}/version.txt'.format(self.app_path)),
-            ('{}/status.txt'.format(self.store_path)),
-            ('{}/log.txt'.format(self.store_path)),
-            ('{}/stage.txt'.format(self.store_path))
+            # ('{}/status.txt'.format(self.store_path)),
+            # ('{}/log.txt'.format(self.store_path)),
+            # ('{}/stage.txt'.format(self.store_path))
         ]
         for file_path in files:
             if not os.path.exists(file_path):
