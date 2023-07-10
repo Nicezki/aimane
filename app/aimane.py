@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import json
 import random
 import uuid
@@ -25,7 +26,11 @@ class AiMane:
             # "batch_size": 60000,
             "validation_split": 0.2,
             "shuffle": True,
-            "usercontent" : True
+            "usercontent" : True,
+            "classes" : 10,
+            "class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            "uc_classes" : 10,
+            "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
         }
         self.model_name = "model.h5"
         self.sysmane = SysMane.SysMane()
@@ -37,6 +42,12 @@ class AiMane:
         self.model_trained = False
         self.use_gpu = True
         self.last_model_acc = 0
+        self.running_config = {
+            "train_count" : [],
+            "validate_count" : [],
+            "last_prediction" : [],
+            "last_prediction_uuid" : None
+        }
 
 
     def get_version(self, as_json=True):
@@ -60,9 +71,6 @@ class AiMane:
     
     
     
-
-
-
     def stage_1(self):
         #Check model 
         res_model = self.load_model()
@@ -103,7 +111,7 @@ class AiMane:
             return "01"
             #"MODEL_ALREADY_LOADED"
         # Check if model file exists
-        if not os.path.exists(self.store_path + "/" + self.model_name):
+        if not os.path.exists("{}/model/{}".format(self.store_path, self.model_name)):
             self.sysmane.write_status("[ERROR] Model file not found.")
             return "02"
             #"MODEL_NOT_FOUND"
@@ -117,13 +125,11 @@ class AiMane:
             return "03"
             #"MODEL_CORRUPTED"
         # Set model_loaded to True
-        self.sysmane.write_status("[INFO] Model loaded successfully.",stage="Loading model",percentage=100)
+        self.sysmane.write_status("[INFO] Model loaded successfully.",stage="Loading model",percentage=100,forcewrite=True)
         self.model_loaded = True
         # Return True
         return "00"
         #"MODEL_LOADED_SUCCESSFULLY"
-
-
         
     
     def check_dataset(self):
@@ -143,16 +149,12 @@ class AiMane:
             return "02"
             # "PREPARING_IN_PROGRESS"
 
-        else:
-            # Create .prepare_lock file
-            self.sysmane.write_status("[INFO] Creating .prepare_lock file.")
-            open("{}/{}".format(self.store_path, ".prepare_lock"), "w").close()
         # Check if the dataset is already prepared.
         self.sysmane.write_status("[INFO] Checking dataset...")
         if os.path.exists("dataset"):
             # else:
                 # Check if the dataset is complete
-                for i in range(10):
+                for i in range(self.training_config["classes"]):
                     if not os.path.exists("{}/training/{}".format(self.dataset_path, i)):
                         self.sysmane.write_status("[WARN] Data {} is missing. Force prepare.".format(i))
                         self.sysmane.write_status("Re-initializing (Repair) because data {} is missing.".format(i), 0)
@@ -165,57 +167,55 @@ class AiMane:
                         return "01"
                         #"REPAIR_NEEDED"
 
+                    # Count the number of files in training folder then compare with the number of files in validate folder
+                    self.get_dataset_count()
+                    # Count files in training folder
+                    for i in range(self.training_config["classes"]):
+                        self.sysmane.write_status("[INFO] Counting files in training folder...",nowrite=True)
+                        self.training_count = len(os.listdir("{}/training/{}".format(self.dataset_path, i)))
+                        self.sysmane.write_status("[INFO] Counting files in validate folder...",nowrite=True)
+                        self.validate_count = len(os.listdir("{}/validate/{}".format(self.dataset_path, i)))
+                        # Compare with self.running_config["train_count"] //Array of training count
+                        if self.running_config["train_count"][i] == 0:
+                            self.sysmane.write_status("[WARN] Metadata count for training is 0. Force prepare.")
+                            self.sysmane.write_status("Re-initializing (Repair) because metadata count is 0.", 0)
+                            return "01"
+                            #"REPAIR_NEEDED"
+                        elif self.running_config["validate_count"][i] == 0:
+                            self.sysmane.write_status("[WARN] Metadata count for validate is 0. Force prepare.")
+                            self.sysmane.write_status("Re-initializing (Repair) because metadata count is 0.", 0)
+                            return "01"
+                            #"REPAIR_NEEDED"
+                        elif self.training_count < self.running_config["train_count"][i]:
+                            self.sysmane.write_status("[WARN] Data {} from training is missing. Force prepare.".format(i))
+                            self.sysmane.write_status("Re-initializing (Repair) because data {} is missing.".format(i), 0)
+                            return "01"
+                            #"REPAIR_NEEDED"
+                        elif self.training_count > self.running_config["train_count"][i]:
+                            # Ignore but warn
+                            self.sysmane.write_status("[WARN] Data {} of training is more than expected. but assuming it's OK.".format(i))
+                        elif self.validate_count < self.running_config["validate_count"][i]:
+                            self.sysmane.write_status("[WARN] Data {} from validate is missing. Force prepare.".format(i))
+                            self.sysmane.write_status("Re-initializing (Repair) because data {} is missing.".format(i), 0)
+                            return "01"
+                            #"REPAIR_NEEDED"
+                        elif self.validate_count > self.running_config["validate_count"][i]:
+                            # Ignore but warn
+                            self.sysmane.write_status("[WARN] Data {} of validate is more than expected. but assuming it's OK.".format(i))
+                        else:
+                            self.sysmane.write_status("[OK] Data {} is OK.".format(i))
+                    
+
                     else:
-                        self.sysmane.write_status("[OK] Dataset is already prepared. Use force=1 to force prepare.")
+                        self.sysmane.write_status("[OK] Dataset is already prepared. Yay~!")
                         return "00"
                         #"READY_TO_USE"
-                    
-                    
-                # # Check if the dataset is complete
-                # # Scan the training directory for each digit and count the number of files in it.
-                # # If the number of files is less than 5000, then the dataset is not complete.
-                # # If the dataset is not complete, then force prepare.
-                # try:
-                #     for i in range(10):
-                #         if len(os.listdir("{}/training/{}".format(self.dataset_path, i))) < 5000:
-                #             self.sysmane.write_status("[WARN] Data {} is missing. Force prepare.".format(i))
-                #             self.sysmane.write_status("Re-initializing (Repair)", 0)
-                #             break
-                #         if len(os.listdir("{}/validate/{}".format(self.dataset_path, i))) < 1000:
-                #             self.sysmane.write_status("[WARN] Data {} is missing. Force prepare.".format(i))
-                #             self.sysmane.write_status("Re-initializing (Repair)", 0)
-                #             break
-                #         else:
-                #             self.sysmane.write_status("[OK] Dataset is already prepared. Use force=1 to force prepare.")
-                #             return "Dataset is already prepared. Use force=1 to force prepare."
-                # except FileNotFoundError:
-                #     self.sysmane.write_status("[WARN] Dataset is not prepared. Force prepare.")
-                #     self.sysmane.write_status("Re-initializing (Repair)", 0)
-                
-                # # Check if the dataset is complete
-                # # Scan the training directory for each digit and count the number of files in it.
-                # # If the number of files is less than 5000, then the dataset is not complete.
-                # # If the dataset is not complete, then force prepare.
-                # try:
-                #     for i in range(10):
-                #         if len(os.listdir("{}/training/{}".format(self.dataset_path, i))) < 5000:
-                #             self.sysmane.write_status("[WARN] Data {} is missing. Force prepare.".format(i))
-                #             self.sysmane.write_status("Re-initializing (Repair)", 0)
-                #             break
-                #         if len(os.listdir("{}/validate/{}".format(self.dataset_path, i))) < 1000:
-                #             self.sysmane.write_status("[WARN] Data {} is missing. Force prepare.".format(i))
-                #             self.sysmane.write_status("Re-initializing (Repair)", 0)
-                #             break
-                #         else:
-                #             self.sysmane.write_status("[OK] Dataset is already prepared. Use force=1 to force prepare.")
-                #             return "Dataset is already prepared. Use force=1 to force prepare."
-                # except FileNotFoundError:
-                #     self.sysmane.write_status("[WARN] Dataset is not prepared. Force prepare.")
-                #     self.sysmane.write_status("Re-initializing (Repair)", 0)
+
         else:
             self.sysmane.write_status("[WARN] Dataset is not prepared yet. Starting to prepare dataset.")
             return "03"
             #"NOT_PREPARED"
+            
         
     def repair_dataset(self):
         # Remove .prepare_lock file
@@ -227,8 +227,93 @@ class AiMane:
         # Run prepare_dataset
         self.prepare_dataset()
 
-        
-    def prepare_dataset(self):       
+
+    def count_dataset(self):
+        # Count the number of files in training folder then compare with the number of files in validate folder
+        # Using count.txt
+        self.sysmane.write_status("[INFO] Counting dataset...")
+        self.sysmane.write_status("Counting dataset", 0)
+        # Count the number of files in training folder
+        self.sysmane.write_status("Counting training dataset", 0)
+        self.sysmane.write_status("Counting training dataset at {}".format(self.get_current_time()))
+        count_training = 0
+        for i in range(self.training_config["classes"]):
+            count_training += len(os.listdir("{}/training/{}".format(self.dataset_path, i)))
+        self.sysmane.write_status("Counting training dataset", 50)
+        # Count the number of files in validate folder
+        self.sysmane.write_status("Counting validate dataset", 50)
+        self.sysmane.write_status("Counting validate dataset at {}".format(self.get_current_time()))
+        count_validate = 0
+        for i in range(self.training_config["classes"]):
+            count_validate += len(os.listdir("{}/validate/{}".format(self.dataset_path, i)))
+        self.sysmane.write_status("Counting validate dataset", 100)
+
+    def write_dataset_count(self):
+        # Count the number of images in the training and validation sets then save them to a file for later use.
+        self.sysmane.write_status("Counting images in training set", percentage=0, nowrite=True)
+        for i in range(self.training_config["classes"]):
+            # Count the number of images in the training set.
+            self.sysmane.write_status("Counting images in training set for class {}".format(i), percentage=int((i+1)/self.training_config["classes"]*100), nowrite=True)
+            train_count = len(os.listdir("{}/training/{}".format(self.dataset_path, i)))
+            self.sysmane.write_status("Counting images in training set for class {} finished. {} images found.".format(i, train_count), percentage=int((i+1)/self.training_config["classes"]*100), nowrite=True)
+            # Count the number of images in the validation set.
+            self.sysmane.write_status("Counting images in validation set for class {}".format(i), percentage=int((i+1)/self.training_config["classes"]*100), nowrite=True)
+            validate_count = len(os.listdir("{}/validate/{}".format(self.dataset_path, i)))
+            self.sysmane.write_status("Counting images in validation set for class {} finished. {} images found.".format(i, validate_count), percentage=int((i+1)/self.training_config["classes"]*100), nowrite=True)
+            # Save to array, Will write to file later.
+            self.running_config["train_count"].append(train_count)
+            self.running_config["validate_count"].append(validate_count)
+        self.sysmane.write_status("Writing training and validation counts to file", percentage=0, nowrite=True)
+        with open("{}/count.txt".format(self.dataset_path), "w") as f:
+            for i in range(self.training_config["classes"]):
+                self.sysmane.write_status("Writing training and validation counts to file for class {}".format(i), percentage=int((i+1)/self.training_config["classes"]*100), nowrite=True)
+                f.write("{}\n".format(self.running_config["train_count"][i]))
+                f.write("{}\n".format(self.running_config["validate_count"][i]))
+        self.sysmane.write_status("Writing training and validation counts to file finished.", percentage=100, nowrite=True)
+
+    def get_dataset_count(self):
+        # From count.txt
+        self.sysmane.write_status("Getting training and validation counts from file", percentage=0, nowrite=True)
+        # Check if count.txt exists
+        if not os.path.exists("{}/count.txt".format(self.dataset_path)):
+            self.sysmane.write_status("count.txt not found. Creating count.txt", percentage=0, nowrite=True)
+            self.write_dataset_count()
+
+        with open("{}/count.txt".format(self.dataset_path), "r") as f:
+            # Clear the array first
+            self.running_config["train_count"] = []
+            self.running_config["validate_count"] = []
+            for i in range(self.training_config["classes"]):
+                self.sysmane.write_status("Getting training and validation counts from file for class {}".format(i), percentage=int((i+1)/self.training_config["classes"]*100), nowrite=True)
+                # Line 1 to self.training_config["classes"] is training count
+                # Line self.training_config["classes"]+1 to self.training_config["classes"]*2 is validation count
+                # Preventing read empty line
+                train_count = f.readline()
+                if train_count == "":
+                    train_count = f.readline()
+                self.running_config["train_count"].append(int(train_count))
+                validate_count = f.readline()
+                if validate_count == "":
+                    validate_count = f.readline()
+                self.running_config["validate_count"].append(int(validate_count))
+
+                
+                
+        self.sysmane.write_status("Getting training and validation counts from file finished.", percentage=100)
+        self.sysmane.write_status("Training count: {}".format(self.running_config["train_count"]))
+        self.sysmane.write_status("Validate count: {}".format(self.running_config["validate_count"]))
+        self.sysmane.write_status("Total training count: {}".format(sum(self.running_config["train_count"])))
+        self.sysmane.write_status("Total validate count: {}".format(sum(self.running_config["validate_count"])), forcewrite=True)
+
+
+   
+    def prepare_dataset(self):     
+        # Create .prepare_lock file
+        if not os.path.exists("{}/{}".format(self.store_path, ".prepare_lock")):
+            self.sysmane.write_status("[INFO] Creating .prepare_lock file.")
+            open("{}/{}".format(self.store_path, ".prepare_lock"), "w").close()  
+
+
         # Prepare the dataset
         (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
@@ -262,7 +347,7 @@ class AiMane:
         self.sysmane.write_status("Train labels: {}".format(train_labels.shape))
 
         # Save the training and validation sets to separate directories.
-        for i in range(10):
+        for i in range(self.training_config["classes"]):
             progress = int((i+1)/10*100)
             self.sysmane.write_status("Creating directory {}/training/{}".format(self.dataset_path, i), progress)
             os.makedirs("{}/training/{}".format(self.dataset_path, i), exist_ok=True)
@@ -293,9 +378,17 @@ class AiMane:
             self.sysmane.write_status("Saving validate image {} to {}".format(idx, filename), progress)
             self.save_image(image, filename)
 
+        # Write the number of images in the training and validation sets to a file.
+        self.write_dataset_count()
+
+        # Delete .prepare_dataset file
+        if os.path.exists("{}/.prepare_dataset".format(self.store_path)):
+            os.remove("{}/.prepare_dataset".format(self.store_path))
 
         # Prepare dataset finished.
-        self.sysmane.write_status("Dataset is prepared.",stage="Preparing dataset",percentage=100)
+        self.sysmane.write_status("Dataset is prepared.",stage="Preparing dataset",percentage=100,forcewrite=True)
+
+
 
     def save_image(self ,image, filename):
         self.sysmane.write_status("Converting image {} to float32...".format(filename),nowrite=True)
@@ -355,8 +448,8 @@ class AiMane:
         # Load the dataset
         images = []
         labels = []
-        for i in range(10):
-            progress = int((i+1)/10*100)
+        for i in range(self.training_config["classes"]):
+            progress = int((i+1)/self.training_config["classes"]*100)
             #Check if the directory exists.
             if not os.path.exists("{}/{}".format(path, i)):
                 self.sysmane.write_status("[ERROR] Directory {}/{} does not exist.".format(path, i))
@@ -481,7 +574,27 @@ class AiMane:
     
 
     def test_model(self, test_images, test_labels):
-        model = load_model("{}/model/{}".format(self.store_path, self.model_name))
+        self.sysmane.write_status("Testing model", stage="Testing model", percentage=0)
+        load_result = self.load_model()
+        #00 - Model loaded successfully
+        #01 - Model already loaded
+        #02 - Model file not found
+        #03 - Model file is corrupted
+
+        if load_result == "02":
+            self.sysmane.write_status("Model file not found. Please train the model first.")
+            return False
+        elif load_result == "03":
+            self.sysmane.write_status("Model file is corrupted. Please train the model again.")
+            return False
+        
+        model = self.model
+
+        # Check if the model is loaded successfully
+        if model == None:
+            self.sysmane.write_status("Model is not loaded. Please train the model first.")
+            return False
+
         test_images = test_images.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0
         test_labels = np.eye(10)[test_labels] 
 
@@ -489,7 +602,7 @@ class AiMane:
         predictions = np.argmax(predictions, axis=1)
 
         os.makedirs("result", exist_ok=True)
-        for i in range(10):
+        for i in range(self.training_config["classes"]):
             os.makedirs("{}/{}".format(self.store_path, i), exist_ok=True)
 
         for i in range(len(predictions)):
@@ -499,6 +612,27 @@ class AiMane:
                 image.save("{}/{}/{}.png".format(self.store_path, predictions[i], i))
 
     def test_model_live(self, image):
+        load_result = self.load_model()
+        #00 - Model loaded successfully
+        #01 - Model already loaded
+        #02 - Model file not found
+        #03 - Model file is corrupted
+
+        if load_result == "02":
+            self.sysmane.write_status("Model file not found. Please train the model first.")
+            return "Model file not found. Please train the model first."
+        elif load_result == "03":
+            self.sysmane.write_status("Model file is corrupted. Please train the model again.")
+            return "Model file is corrupted. Please train the model again."
+     
+        
+        model = self.model
+
+        # Check if the model is loaded successfully
+        if model == None:
+            self.sysmane.write_status("Model is not loaded. Please train the model first.")
+            return "Model is not loaded. Please train the model first."
+
         image_data = image.read()  # Retrieve the bytes data from the FileStorage object
         image_stream = io.BytesIO(image_data)
         image = Image.open(image_stream)
@@ -508,7 +642,6 @@ class AiMane:
         # Convert to numpy array
         image = np.array(image)
 
-        model = load_model("{}/model/{}".format(self.store_path, self.model_name))
         test_images = np.array(image).reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0
 
         predictions = model.predict(test_images)
@@ -516,12 +649,75 @@ class AiMane:
         self.sysmane.write_status("Prediction is {} , other predictions are {}".format(predictions[0], predictions), stage="Prediction", percentage=0)
         # Save the image to {storepath}/result/{prediction}--{uuid}.png
         os.makedirs("{}/result".format(self.store_path), exist_ok=True)
-        filename = "{}/result/{}--{}.png".format(self.store_path, predictions[0], "uc_" + str(uuid.uuid4()))
-        self.save_image(image, filename)
+        #File name will determine by the image data to avoid duplicate dataset
+        filename = hashlib.md5(image_data).hexdigest()
+        filepath = "{}/result/{}--{}.png".format(self.store_path, predictions[0], "uc_" + filename)
+        self.save_image(image, filepath)
+        self.running_config["last_prediction"] = predictions[0]
+        self.running_config["last_prediction_uuid"] = "uc_" + filename
         return predictions
     
+
+    def define_prediction(self,new_prediction, prediction, uuid):
+        # Rename file in /result/{prediction}--{uuid}.png to /result/{new_prediction}--{uuid}.png
+        # Check if the file exist
+        if os.path.isfile("{}/result/{}--{}.png".format(self.store_path, prediction, uuid)):
+            os.rename("{}/result/{}--{}.png".format(self.store_path, prediction, uuid), "{}/result/{}--{}.png".format(self.store_path, new_prediction, uuid))
+            self.sysmane.write_status("Prediction defined to {}".format(new_prediction), stage="Prediction", percentage=0)
+            return True
+        else:
+            self.sysmane.write_status("Prediction not found", stage="Prediction", percentage=0)
+            return False
+        
+    def define_last_prediction(self, new_prediction):
+        # Get last prediction and uuid from running_config
+        prediction = self.running_config["last_prediction"]
+        uuid = self.running_config["last_prediction_uuid"]
+        return self.define_prediction(new_prediction, prediction, uuid)
+    
+
+    def rewrite_filename(self):
+        self.sysmane.write_status("Rewriting filename", stage="Rewriting filename", percentage=0)
+        # Use this for upgrade from uuid to hashlib md5
+        # Copy back all images in {storepath}/uc/{label} to {storepath}/result
+        #{storepath}/uc/{label}/{uuid}.png => {storepath}/result/{prediction}--{uuid}.png
+        for label in os.listdir("{}/uc".format(self.store_path)):
+            for filename in os.listdir("{}/uc/{}".format(self.store_path, label)):
+                uuid = filename.split(".")[0]
+                prediction = label
+                shutil.copyfile("{}/uc/{}/{}".format(self.store_path, label, filename), "{}/result/{}--{}.png".format(self.store_path, prediction, uuid))
+        # Delete all images in {storepath}/uc
+        shutil.rmtree("{}/uc".format(self.store_path))
+        os.makedirs("{}/uc".format(self.store_path), exist_ok=True)
+
+        # 1. Loop all images in {storepath}/result
+        # 2. Read the image
+        # 3. Get the Hashlib md5 of the image
+        # 4. Copy the image to {storepath}/uc/{label}/{uuid}.png
+
+        for filename in os.listdir("{}/result".format(self.store_path)):
+            self.sysmane.write_status("Reading {}".format(filename))
+            image_data = open("{}/result/{}".format(self.store_path, filename), "rb").read()
+            self.sysmane.write_status("Hashing {}".format(filename))
+            hmd5 = hashlib.md5(image_data).hexdigest()
+            self.sysmane.write_status("Covert {} to {}".format(filename, hmd5))
+            prediction = filename.split("--")[0]
+            self.sysmane.write_status("Copying {} to {}/uc/{}/{}.png".format(filename, self.store_path, prediction, hmd5))
+            os.makedirs("{}/uc/{}".format(self.store_path, prediction), exist_ok=True)
+            shutil.copyfile("{}/result/{}".format(self.store_path, filename), "{}/uc/{}/{}.png".format(self.store_path, prediction, hmd5))
+
+        # Delete all images in {storepath}/result
+        self.sysmane.write_status("Deleting all images in {}/result".format(self.store_path))
+        shutil.rmtree("{}/result".format(self.store_path))
+        self.sysmane.write_status("Creating {}/result".format(self.store_path))
+        os.makedirs("{}/result".format(self.store_path), exist_ok=True)
+        self.sysmane.write_status("Copying result to user content completed",forcewrite=True)
+
+        
     
     def copy_result_to_usercontent(self):
+        self.sysmane.write_status("Copying result to user content", stage="Copying result to user content", percentage=0)
+        # Use this for upgrade from uuid to hashlib md5
         # Copy all images in {storepath}/result to {storepath}/uc/{label}
             #{storepath}/result/{prediction}--{uuid}.png => {storepath}/uc/{label}/{uuid}.png
         for filename in os.listdir("{}/result".format(self.store_path)):
@@ -532,6 +728,7 @@ class AiMane:
         # Delete all images in {storepath}/result
         shutil.rmtree("{}/result".format(self.store_path))
         os.makedirs("{}/result".format(self.store_path), exist_ok=True)
+        self.sysmane.write_status("Copying result to user content completed", stage="Copying result to user content", percentage=100)
 
             
     # def test_model_label(self, image, label):   
@@ -604,5 +801,5 @@ class VerboseCallback(Callback):
             self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
             # Finish training
             if epoch + 1 == self.params["epochs"]:
-                self.sysmane.write_status("Training model finished on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100)
+                self.sysmane.write_status("Training model finished on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
                 self.aimane.write_model_acc(logs["accuracy"])

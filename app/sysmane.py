@@ -99,7 +99,7 @@ class SysMane:
         
 
     # Function to write the current status
-    def write_status(self, status, percentage=None, stage=None, nowrite=False):
+    def write_status(self, status, percentage=None, stage=None, nowrite=False,forcewrite=False):
         log_message = '[{}]: '.format(self.get_current_time())
         # Use self.current_status to store the status
         self.current_status['time'] = self.get_current_time()
@@ -117,52 +117,16 @@ class SysMane:
         # Log message rewrite
         # Write the status to log
         if not nowrite:
-            self.write_log('{}'.format(status), print_log=True)
-
-        # Send the status back to server.py 
-
-
-        # Write the status to status.txt
-        # DEPRECATED!!!!!!!!!!!!!
-        # if not nowrite:
-        #     with open('{}/status.txt'.format(self.store_path), 'w') as f:
-        #         f.write(json.dumps(self.current_status))
+            if forcewrite:
+                self.write_log('{}'.format(status), print_log=True,force_write=True)
+            else:
+                self.write_log('{}'.format(status), print_log=True)
+        
 
 
-    # def write_log(self, log, print_log=True, raw=False):
-    #     # Check if log.txt exist
-    #     if os.path.exists('{}/log.txt'.format(self.store_path)):
-    #         # Check file size
-    #         # If file size is more than 1MB, create a new file, Move the old file to log_old.txt (Append)
-    #         if os.path.getsize('{}/log.txt'.format(self.store_path)) > 1000000:
-    #             # Check if log_old.txt exist
-    #             if os.path.exists('{}/log_old.txt'.format(self.store_path)):
-    #                 #Append the log.txt to log_old.txt
-    #                 with open('{}/log.txt'.format(self.store_path), 'r') as f:
-    #                     log_old = f.read()
-    #                 with open('{}/log_old.txt'.format(self.store_path), 'a') as f:
-    #                     f.write(log_old)
-    #                 # Delete log.txt
-    #                 os.remove('{}/log.txt'.format(self.store_path))
-    #             # If log_old.txt does not exist, create a new one
-    #             else:
-    #                 # Rename log.txt to log_old.txt
-    #                 os.rename('{}/log.txt'.format(self.store_path), '{}/log_old.txt'.format(self.store_path))
-    #         # If file size is less than 1MB, append the log to log.txt
-    #         else:
-    #             with open('{}/log.txt'.format(self.store_path), 'a') as f:
-    #                 f.write('[{}] : {}\n'.format(self.get_current_time(), log))
-    #     # If log.txt does not exist, create a new one
-    #     else:
-    #         with open('{}/log.txt'.format(self.store_path), 'w') as f:
-    #             if raw:
-    #                 f.write(log)
-    #             else:
-    #                 f.write('[{}] : {}\n'.format(self.get_current_time(), log))
-    #     if print_log:
-    #         print('[{}] : {}'.format(self.get_current_time(), log))
 
-    def write_log(self, log, print_log=True, raw=False,force_write=False):
+
+    def write_log(self, log, print_log=True,force_write=False):
         self.log_buffer.append(log)  # Add log entry to the buffer
 
         if len(self.log_buffer) >= self.buffer_size or force_write:

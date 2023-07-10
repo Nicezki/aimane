@@ -99,6 +99,7 @@ def train_status():
 
 
 
+
 @app.route('/api/predict', methods=['POST'])
 def predict():
     # Get image from the POST request
@@ -107,11 +108,83 @@ def predict():
     # Make prediction
     result = aimane.test_model_live(image)
 
+    # Check if the result is string then return error message
+    if isinstance(result, str):
+        # Return error message as JSON
+        error = {
+            'error': result
+        }
+        return jsonify(error)
+    
     # Convert ndarray to list
     result = result.tolist()
 
     # Return result in JSON format
     return jsonify(result)
+
+
+# Route will be /api/definelastpredict?label=xxx
+@app.route('/api/definelastpredict', methods=['GET'])
+def definepredict():
+    # Get label from the GET request
+    label = request.args.get('label')
+
+    # Start the training process in a separate task
+    res = aimane.define_last_prediction(label)
+
+    if res == True and label != None:
+        return "Define last prediction to " + label + " successful!"
+    elif res == False and label != None:
+        return "Define last prediction to " + label + " failed!"
+    else:
+        return "Define last prediction failed because label is not provided or not correct!"
+    
+
+
+# Route will be /api/definepredict?label=xxx&image=xxx
+@app.route('/api/definepredict', methods=['GET'])
+def definepredict2():
+    # Get label from the GET request
+    label = request.args.get('label')
+    # Get image from the GET request
+    image = request.args.get('image')
+
+
+    if label == None or image == None:
+        return "Define prediction failed because label or image is not provided!"
+
+
+    # Check if the image is in the correct format // the format is 1--aabbccddee
+    if image.find("--") == -1:
+        return "Define prediction failed because image is not in the correct format!"
+    
+    
+    # Saparate image and label from the string 
+    # the format is 1--aabbccddee
+    group = image.split("--")[0]
+    image = image.split("--")[1]
+    
+
+
+    # Start the training process in a separate task
+    res = aimane.define_prediction(label, group, image)
+
+    if res == True and label != None:
+        return "Define prediction of " + image + " from group " + group + " to " + label + " successful!"
+    elif res == False and label != None:
+        return "Define prediction of " + image + " from group " + group + " to " + label + " failed!"
+    else:
+        return "Define prediction failed because label or image is not provided or not correct!"
+    
+    
+
+
+
+@app.route('/api/iknowwhatimdoing/rewrite_filename', methods=['GET'])
+def rewrite_filename():
+    aimane.rewrite_filename()
+    return "Rewrite filename process has started."
+
 
 
 # @app.route('/api/predict-lab', methods=['GET'])
@@ -127,7 +200,8 @@ def predict_page():
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('test.html')
+    return render_template('main.html')
+
 
 
 # # Initialize the app
@@ -136,8 +210,13 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
-    # Listen at 0.0.0.0:5000
+    # Run as local server with debug mode on
+    #app.run(debug=True, use_reloader=False)
+    # Run as production server
+    aimane.sysmane.write_status("Server is started")
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+
+
 
     
 
