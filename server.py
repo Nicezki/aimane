@@ -23,6 +23,13 @@ def getstatus():
     return status
 
 
+@app.route('/api/trainstatus', methods=['GET'])
+def gettrainstatus():
+    status = aimane.get_train_status()
+    return status
+
+
+
 # Route will be
 # /api/copyuc
 @app.route('/api/restouc', methods=['GET'])
@@ -37,6 +44,7 @@ def copyuc():
 # Route will be
 # /api/sse/status
 prev_status = None
+train_prev_status = None
 
 @app.route('/api/sse/status', methods=['GET'])
 def sse_status():
@@ -52,7 +60,18 @@ def sse_status():
     return Response(gen(), mimetype='text/event-stream')
 
 
+@app.route('/api/sse/trainstatus', methods=['GET'])
+def sse_trainstatus():
+    def gen():
+        train_prev_status = None
+        while True:
+            status = aimane.get_train_status()
+            if status is not None and status != train_prev_status:
+                yield 'data: {}\n\n'.format(status)
+                train_prev_status = status
+            time.sleep(0.5)
 
+    return Response(gen(), mimetype='text/event-stream')
 
     
 
@@ -163,7 +182,7 @@ def definepredict2():
     # the format is 1--aabbccddee
     group = image.split("--")[0]
     image = image.split("--")[1]
-    
+
 
 
     # Start the training process in a separate task

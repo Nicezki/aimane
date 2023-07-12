@@ -122,6 +122,7 @@
                 <div class="btn-group mb-3">
                     <button class="btn btn-primary" onclick="prepare()">Prepare</button>
                     <button class="btn btn-primary" onclick="repair()">Repair</button>
+                    <button class="btn btn-primary" onclick="resourceToUserContent()">REtoUC</button>
                 </div>
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="train()">Train</button>
@@ -140,6 +141,19 @@
             <input type="range" min="1" max="20" value="10" id="brushSizeSlider" onchange="changeBrushSize()">
             <label for="brushSizeSlider">Brush Size</label>
             <br>
+            <div id="numberButtons">
+                <button class="btn btn-primary" onclick="defineLastPredict(0)">0</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(1)">1</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(2)">2</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(3)">3</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(4)">4</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(5)">5</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(6)">6</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(7)">7</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(8)">8</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(9)">9</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(10)">STAR</button>
+            </div>
             <p id="prediction"></p>
         </div>
     </div>
@@ -259,6 +273,22 @@
             });
         }
 
+
+        // get to /api/restouc
+        function resourceToUserContent()
+        {
+            $.ajax({
+                type: "GET",
+                url: "/api/restouc",
+                success: function(response) {
+                    $("#prediction").text("Prediction: " + response.prediction);
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
         function resetCanvas() {
             canvas.clear();
             canvas.backgroundColor = "#000000";
@@ -343,6 +373,21 @@
                     console.log("Prediction request failed:", xhr.responseText);
                 }
             });
+        }
+
+        
+        function defineLastPredict(label) {
+        $.ajax({
+            type: "GET",
+            url: "/api/definelastpredict",
+            data: { label: label },
+            success: function() {
+                console.log("API call successful.");
+            },
+            error: function(xhr, status, error) {
+                console.log("API call failed:", xhr.responseText);
+            }
+        });
         }
     </script>
 </body>

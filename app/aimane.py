@@ -22,15 +22,17 @@ import io
 class AiMane:
     def __init__(self):
         self.training_config = {
-            "epochs": 50,
+            "use_gpu" : True,
+            "epochs": 25,
+            "stop_on_acc" : 1.00,
             # "batch_size": 60000,
             "validation_split": 0.2,
             "shuffle": True,
             "usercontent" : True,
             "classes" : 10,
             "class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            "uc_classes" : 10,
-            "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+            "uc_classes" : 11,
+            "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star"],
         }
         self.model_name = "model.h5"
         self.sysmane = SysMane.SysMane()
@@ -40,7 +42,6 @@ class AiMane:
         self.model = None
         self.model_loaded = False
         self.model_trained = False
-        self.use_gpu = True
         self.last_model_acc = 0
         self.running_config = {
             "train_count" : [],
@@ -68,7 +69,10 @@ class AiMane:
     
     def getstatus(self):
         return self.sysmane.getstatus()
-    
+
+    def set_train_status(self, status=None, stage=None, percentage=None, epoch=None, batch=None, loss=None, acc=None):
+        self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
+
     
     
     def stage_1(self):
@@ -421,7 +425,7 @@ class AiMane:
                 self.sysmane.write_status("[ERROR] Usercontent dataset does not exist.")
                 return "Usercontent dataset does not exist."
             # Load the usercontent dataset.
-            usercontent_images, usercontent_labels = self.load_mnist("{}/uc".format(self.store_path))
+            usercontent_images, usercontent_labels = self.load_mnist("{}/uc".format(self.store_path), usercontent=True)
             if usercontent_images is not None and usercontent_labels is not None and train_images is not None and train_labels is not None:
                 # Concatenate the usercontent dataset to the training dataset.
                 train_images = np.concatenate((train_images, usercontent_images))
@@ -443,12 +447,17 @@ class AiMane:
             return train_images, train_labels, validate_images, validate_labels
         
 
-    def load_mnist(self, path):
+    def load_mnist(self, path, usercontent=False):
         self.sysmane.write_status("Loading MNIST dataset from {}...".format(path), nowrite=True)
         # Load the dataset
         images = []
         labels = []
-        for i in range(self.training_config["classes"]):
+        if usercontent:
+            training_classes = self.training_config["uc_classes"]
+        else:
+            training_classes = self.training_config["classes"]
+
+        for i in range(training_classes):
             progress = int((i+1)/self.training_config["classes"]*100)
             #Check if the directory exists.
             if not os.path.exists("{}/{}".format(path, i)):
@@ -512,35 +521,28 @@ class AiMane:
 
     def train_model(self, train_images, train_labels):
         # USE GPU or CPU
-        if self.use_gpu:
-            self.sysmane.write_status("Using GPU")
+        if self.training_config["use_gpu"]:
             os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-            # Showing GPU Name and Memory Usage
-            gpus = tf.config.experimental.list_physical_devices('GPU')
-            if gpus:
-                try:
-                    for gpu in gpus:
-                        tf.config.experimental.set_memory_growth(gpu, True)
-                        print(gpu)
-                except RuntimeError as e:
-                    print(e)
-            
             config = tf.compat.v1.ConfigProto()
-            config.gpu_options.allow_growth = True
-            tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
-        else:
-            self.sysmane.write_status("Using CPU")
-    
+            session = tf.compat.v1.Session(config=config)
+            self.sysmane.write_status("GPU options are enabled. Try to use GPU.")
+            # Prevent alreay allocated memory from being allocated again.
+            try: 
+                tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
+            except:
+                self.sysmane.write_status("[WARNING] GPU allocation is failed. Maybe It's already allocated.")
+            # tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
+
         self.sysmane.write_status("Training model", stage="Training model", percentage=0)
         self.sysmane.write_status("Training model at {}".format(self.get_current_time()))
         train_images = train_images.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0 # Normalize the images to a range of [0, 1]
-        train_labels = np.eye(10)[train_labels] # One-hot encode the labels
-    
+        classes = self.training_config["uc_classes"] 
+        train_labels = np.eye(classes)[train_labels]
         model = tf.keras.models.Sequential()
         model.add(Conv2D(64, (3, 3), activation="relu", input_shape=(28, 28, 1))) # Add a convolutional layer with 64 filters, a kernel size of 3x3, and relu activation
         model.add(MaxPooling2D((2, 2)))
         model.add(Flatten())
-        model.add(Dense(10, activation="softmax"))
+        model.add(Dense(classes, activation="softmax"))
     
         model.compile(loss=tf.keras.losses.categorical_crossentropy, optimizer=tf.keras.optimizers.Adam(), metrics=["accuracy"])
         # Create an instance of the VerboseCallback class, passing the `sysname` object
@@ -555,6 +557,12 @@ class AiMane:
         os.makedirs("{}/model".format(self.store_path), exist_ok=True)
         current_model_acc = self.get_model_acc()
         self.sysmane.write_status("Current model accuracy: {}".format(current_model_acc))
+        # Give back VRAM to the system
+        if self.training_config["use_gpu"]:
+            tf.keras.backend.clear_session()
+            self.sysmane.write_status("GPU options are enabled. Try to give back VRAM to the system.")
+
+
         # Check if the current model accuracy is lower than last model accuracy
         if isinstance(self.last_model_acc, int) and isinstance(current_model_acc, int) and self.last_model_acc > current_model_acc:
             self.sysmane.write_status("Last model accuracy is higher than current model accuracy. Discarding current model.")
@@ -791,6 +799,8 @@ class VerboseCallback(Callback):
             percentage = (batch + 1) / 60000 * 100
             percentage = round(percentage + self.percentage, 3)
             self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=percentage)
+            # self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
+            self.sysmane.set_train_status(status="Training model", stage="Training model on batch {}".format(batch + 1), percentage=percentage, epoch=None, batch=batch, loss=logs["loss"], acc=logs["accuracy"])
 
     def on_epoch_end(self, epoch, logs=None):
         if logs is not None and "loss" in logs and "accuracy" in logs:
@@ -799,7 +809,12 @@ class VerboseCallback(Callback):
             self.percentage = (epoch + 1) / self.params["epochs"] * 100
             percentage = round(self.percentage, 3)
             self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
-            # Finish training
-            if epoch + 1 == self.params["epochs"]:
+            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch, batch=None, loss=logs["loss"], acc=logs["accuracy"])
+            if self.aimane.training_config["stop_on_acc"] is not None and logs["accuracy"] >= self.aimane.training_config["stop_on_acc"] and self.model is not None:
+                self.model.stop_training = True
+                self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
+                self.aimane.write_model_acc(logs["accuracy"])
+            elif self.params is not None and epoch + 1 == self.params["epochs"]:
                 self.sysmane.write_status("Training model finished on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
                 self.aimane.write_model_acc(logs["accuracy"])
+

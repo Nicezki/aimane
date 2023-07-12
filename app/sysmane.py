@@ -208,12 +208,12 @@ class SysMane:
 
     def get_train_status(self):
         # Get status from the self.current_status
-        status = self.current_status
+        status = self.train_status
         # Convert the status to string
         status_string = json.dumps(status)
         return status_string
     
-    def set_train_status(self, status=None, stage=None, epoch=None, batch=None, loss=None, acc=None):
+    def set_train_status(self, status=None, stage=None, percentage=None, epoch=None, batch=None, loss=None, acc=None):
         # Set time  
         self.train_status['time'] = self.get_current_time()
         # Get status from the self.current_status
