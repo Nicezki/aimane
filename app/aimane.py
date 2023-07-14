@@ -49,6 +49,15 @@ class AiMane:
             "last_prediction" : [],
             "last_prediction_uuid" : None
         }
+        self.prediction_result = {
+            "result" : None, 
+            "percentage" : None,
+            "other_result" : None,
+            "other_percentage" : None,
+            "uuid" : None,
+            "image_data" : None,
+            "numpy_array" : None
+        }
 
 
     def get_version(self, as_json=True):
@@ -73,6 +82,37 @@ class AiMane:
     def set_train_status(self, status=None, stage=None, percentage=None, epoch=None, batch=None, loss=None, acc=None):
         self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
 
+
+    def set_prediction_result(self, result=None, percentage=None, other_result=None, other_percentage=None, uuid=None, image_data=None,numpy_array=None):
+        if result is not None:
+            self.prediction_result["result"] = result
+        if percentage is not None:
+            self.prediction_result["percentage"] = percentage
+        if other_result is not None:
+            self.prediction_result["other_result"] = other_result
+        if other_percentage is not None:
+            self.prediction_result["other_percentage"] = other_percentage
+        if uuid is not None:
+            self.prediction_result["uuid"] = uuid
+        if image_data is not None:
+            self.prediction_result["image_data"] = image_data
+        if numpy_array is not None:
+            # Convert ndarray to json
+            self.prediction_result["numpy_array"] = numpy_array.tolist()
+
+            
+
+        return self.prediction_result
+    
+    def get_prediction_result(self,as_json=True):
+        status = self.prediction_result
+        if as_json:
+            status_string = json.dumps(status)
+            return status_string
+        else:
+            return self.prediction_result
+        
+    
     
     
     def stage_1(self):
@@ -114,6 +154,7 @@ class AiMane:
         if self.model_loaded:
             return "01"
             #"MODEL_ALREADY_LOADED"
+
         # Check if model file exists
         if not os.path.exists("{}/model/{}".format(self.store_path, self.model_name)):
             self.sysmane.write_status("[ERROR] Model file not found.")
@@ -629,10 +670,11 @@ class AiMane:
         if load_result == "02":
             self.sysmane.write_status("Model file not found. Please train the model first.")
             return "Model file not found. Please train the model first."
+        
         elif load_result == "03":
             self.sysmane.write_status("Model file is corrupted. Please train the model again.")
             return "Model file is corrupted. Please train the model again."
-     
+        
         
         model = self.model
 
@@ -640,6 +682,8 @@ class AiMane:
         if model == None:
             self.sysmane.write_status("Model is not loaded. Please train the model first.")
             return "Model is not loaded. Please train the model first."
+        
+
 
         image_data = image.read()  # Retrieve the bytes data from the FileStorage object
         image_stream = io.BytesIO(image_data)
@@ -654,15 +698,22 @@ class AiMane:
 
         predictions = model.predict(test_images)
         predictions = np.argmax(predictions, axis=1)
+        # percentage = np.max(predictions[0])
+        # prediction_list = [predictions[0]]
+        other_result = []
         self.sysmane.write_status("Prediction is {} , other predictions are {}".format(predictions[0], predictions), stage="Prediction", percentage=0)
         # Save the image to {storepath}/result/{prediction}--{uuid}.png
         os.makedirs("{}/result".format(self.store_path), exist_ok=True)
-        #File name will determine by the image data to avoid duplicate dataset
+        # File name will determine by the image data to avoid duplicate dataset
         filename = hashlib.md5(image_data).hexdigest()
         filepath = "{}/result/{}--{}.png".format(self.store_path, predictions[0], "uc_" + filename)
         self.save_image(image, filepath)
         self.running_config["last_prediction"] = predictions[0]
         self.running_config["last_prediction_uuid"] = "uc_" + filename
+        # Image data  will be provided to the frontend by api to show the image
+        image_data = base64.b64encode(image_data).decode("utf-8")
+        #self.set_prediction_result(result=int(predictions[0].argmax()), percentage=float(percentage), other_result=other_result, other_percentage=other_percentage, uuid="uc_" + filename, image_data=image_data)
+        self.set_prediction_result(result=int(predictions[0]), other_result=other_result, uuid="uc_" + filename, image_data=image_data, numpy_array=test_images)
         return predictions
     
 
@@ -809,7 +860,7 @@ class VerboseCallback(Callback):
             self.percentage = (epoch + 1) / self.params["epochs"] * 100
             percentage = round(self.percentage, 3)
             self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
-            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch, batch=None, loss=logs["loss"], acc=logs["accuracy"])
+            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"])
             if self.aimane.training_config["stop_on_acc"] is not None and logs["accuracy"] >= self.aimane.training_config["stop_on_acc"] and self.model is not None:
                 self.model.stop_training = True
                 self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)

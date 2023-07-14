@@ -134,6 +134,7 @@
         <div id="digitRecognitionTab">
             <h1>Handwritten Digit Recognition</h1>
             <canvas id="canvas" width="280" height="280"></canvas>
+            <h1 id="prediction"></h1>
             <br>
             <button class="btn btn-primary" onclick="predict()">Predict</button>
             <button class="btn btn-primary" onclick="resetCanvas()">Reset</button>
@@ -154,7 +155,6 @@
                 <button class="btn btn-primary" onclick="defineLastPredict(9)">9</button>
                 <button class="btn btn-primary" onclick="defineLastPredict(10)">STAR</button>
             </div>
-            <p id="prediction"></p>
         </div>
     </div>
 
@@ -265,7 +265,23 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
-                    $("#prediction").text("Prediction: " + response.prediction);
+                    prediction = response[0]
+                    // Prediction Mappping
+                    prediction_label = {
+                        0: "0",
+                        1: "1",
+                        2: "2",
+                        3: "3",
+                        4: "4",
+                        5: "5",
+                        6: "6",
+                        7: "7",
+                        8: "8",
+                        9: "9",
+                        10: "⭐"
+                    }
+                    prediction = prediction_label[prediction]
+                    $("#prediction").text("Prediction: " + prediction);
                 },
                 error: function(xhr, status, error) {
                     console.log(xhr.responseText);
@@ -281,7 +297,7 @@
                 type: "GET",
                 url: "/api/restouc",
                 success: function(response) {
-                    $("#prediction").text("Prediction: " + response.prediction);
+                    // $("#prediction").text("Prediction: " + response.prediction);
                 },
                 error: function(xhr, status, error) {
                     console.log(xhr.responseText);
@@ -367,7 +383,23 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
-                    $("#prediction").text("Prediction: " + response.prediction);
+                    prediction = response[0]
+                    // Prediction Mappping
+                    prediction_label = {
+                        0: "0",
+                        1: "1",
+                        2: "2",
+                        3: "3",
+                        4: "4",
+                        5: "5",
+                        6: "6",
+                        7: "7",
+                        8: "8",
+                        9: "9",
+                        10: "⭐"
+                    }
+                    prediction = prediction_label[prediction]
+                    $("#prediction").text("Prediction: " + prediction);
                 },
                 error: function(xhr, status, error) {
                     console.log("Prediction request failed:", xhr.responseText);

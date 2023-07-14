@@ -229,6 +229,9 @@ class SysMane:
             self.train_status['loss'] = loss
         if acc is not None:
             self.train_status['acc'] = acc
+        if percentage is not None:
+            self.train_status['percentage'] = percentage
+
         # Convert the status to string
         status_string = json.dumps(self.train_status)
         return status_string

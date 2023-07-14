@@ -29,6 +29,13 @@ def gettrainstatus():
     return status
 
 
+@app.route('/api/predictresults', methods=['GET'])
+def getpredictstatus():
+    status = aimane.get_prediction_result()
+    
+    return status
+
+
 
 # Route will be
 # /api/copyuc
@@ -45,6 +52,7 @@ def copyuc():
 # /api/sse/status
 prev_status = None
 train_prev_status = None
+predict_prev_result = None
 
 @app.route('/api/sse/status', methods=['GET'])
 def sse_status():
@@ -73,7 +81,56 @@ def sse_trainstatus():
 
     return Response(gen(), mimetype='text/event-stream')
 
-    
+
+@app.route('/api/sse/predictresults', methods=['GET'])
+def sse_predictresults():
+    def gen():
+        predict_prev_result = None
+        while True:
+            status = aimane.get_prediction_result()
+            if status is not None and status != predict_prev_result:
+                yield 'data: {}\n\n'.format(status)
+                predict_prev_result = status
+            time.sleep(0.5)
+
+    return Response(gen(), mimetype='text/event-stream')
+
+
+
+@app.route('/api/sse/events', methods=['GET'])
+# Show all events
+# Saparate events by group
+# custom events: status, trainstatus, predictresults
+
+def sse_events():
+    def gen():
+        prev_status = None
+        train_prev_status = None
+        predict_prev_result = None
+        while True:
+            status = aimane.get_status()
+            train_status = aimane.get_train_status()
+            predict_result = aimane.get_prediction_result()
+
+            # Custom events : Status
+            if status is not None and status != prev_status:
+                yield 'event: status\ndata: {}\n\n'.format(status)
+                prev_status = status
+
+            # Custom events : Train Status
+            if train_status is not None and train_status != train_prev_status:
+                yield 'event: trainstatus\ndata: {}\n\n'.format(train_status)
+                train_prev_status = train_status
+            
+            # Custom events : Prediction Result
+            if predict_result is not None and predict_result != predict_prev_result:
+                yield 'event: predictresults\ndata: {}\n\n'.format(predict_result)
+                predict_prev_result = predict_result
+
+            time.sleep(0.2)
+
+    return Response(gen(), mimetype='text/event-stream')
+
 
 
 # Route will be /api/prepare
@@ -235,9 +292,6 @@ if __name__ == '__main__':
     aimane.sysmane.write_status("Server is started")
     app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
 
-
-
-    
 
 
 
