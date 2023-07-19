@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import json
+import math
 import random
 import uuid
 import cv2
@@ -57,8 +58,23 @@ class AiMane:
             "other_percentage" : None,
             "uuid" : None,
             "image_data" : None,
-            "numpy_array" : None
+            "numpy_array" : None,
+            "classes" : None,
+            "class_names" : None
         }
+
+        self.sysmane.set_train_status(total_epoch=self.training_config["epochs"])
+        # self.training_config["class_names"] combined with self.training_config["classes"] (merged skip duplicate)
+        if(self.training_config["usercontent"]):
+            self.prediction_result["class_names"] = self.training_config["uc_class_names"]
+            self.prediction_result["classes"] = self.training_config["uc_classes"]
+        else:
+            self.prediction_result["class_names"] = self.training_config["class_names"]
+            self.prediction_result["classes"] = self.training_config["classes"]
+
+
+        # self.training_config["class_names"] = list(dict.fromkeys(self.training_config["class_names"]))
+        
 
 
     def get_version(self, as_json=True):
@@ -112,6 +128,7 @@ class AiMane:
         if epochs is not None:
             self.training_config["epochs"] = epochs
             self.sysmane.write_status("[CONFIG] Training Config: epochs is now set to " + str(epochs))
+            self.sysmane.set_train_status(total_epoch=epochs)
         if stop_on_acc is not None:
             self.training_config["stop_on_acc"] = stop_on_acc
             self.sysmane.write_status("[CONFIG] Training Config: stop_on_acc is now set to " + str(stop_on_acc))
@@ -908,20 +925,30 @@ class VerboseCallback(Callback):
             #     percentage = ((batch + 1) / self.aimane.running_config["highest_batch"] * 100) 
             #     # Weight of 1 epoch to the total percentage
             #     percentage = percentage / 100 * (1 / self.aimane.training_config["epochs"])
-            percentage = percentage = (batch + 1) / 60000 * 100 
-            percentage = round(percentage + self.percentage, 3)
-            self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=percentage)
+            percentage = (batch + 1) / 60000 * 100 
+            # Round down to 3 decimal places
+            rdpercentage = math.floor(percentage+ self.percentage)
+            # to 3 decimal places
+            rdpercentage = round(rdpercentage, 3)
+
+            percentage = self.percentage + percentage
+            
+            self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=rdpercentage)
             # self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
-            self.sysmane.set_train_status(status="Training model", stage="Training model on batch {}".format(batch + 1), percentage=percentage, epoch=None, batch=batch, loss=logs["loss"], acc=logs["accuracy"])
+            self.sysmane.set_train_status(status="Training model", stage="Training model on batch {}".format(batch + 1), percentage=percentage, epoch=None, batch=batch, loss=logs["loss"], acc=logs["accuracy"], finished=False, result="Not ready")
 
     def on_epoch_end(self, epoch, logs=None):
         if logs is not None and "loss" in logs and "accuracy" in logs:
+            # If epoch is 0 clear history
+            if epoch == 0:
+                self.sysmane.clear_train_history()
             print("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]))
             # Update percentage by Epoch / Total Epochs * 100
             self.percentage = (epoch + 1) / self.params["epochs"] * 100
-            percentage = round(self.percentage, 3)
-            self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
-            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"])
+            percentage = self.percentage
+            rdpercentage = round(self.percentage, 3)
+            self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=rdpercentage)
+            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"], finished=False, result="Not ready")
             if self.aimane.training_config["stop_on_acc"] is not None and logs["accuracy"] >= self.aimane.training_config["stop_on_acc"] and self.model is not None:
                 self.model.stop_training = True
                 self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)

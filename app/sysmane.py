@@ -208,6 +208,12 @@ class SysMane:
         status_string = json.dumps(status)
         return status_string
     
+    def clear_train_history(self):
+        self.train_status['history'] = {}
+        self.write_status('Train history cleared', nowrite=True)
+
+        
+    
     
 
     def get_train_status(self):
@@ -252,7 +258,8 @@ class SysMane:
             else:
             #Reset the history
                 self.write_status(status='Resetting history because epoch {} is less than the last epoch {}'.format(epoch,self.train_status['epoch']))
-                self.train_status['history'] = {}
+                # Clear the history
+                self.train_status['history'].clear()
                 self.train_status['history']['e{}'.format(epoch)] = acc
         
         # Convert the status to string
