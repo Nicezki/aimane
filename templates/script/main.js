@@ -8,8 +8,11 @@ class AIManeUI {
         this.serverSSERoute = "/api/sse/events";
         this.connected = false;
         this.status = null;
+        this.laststatus = null;
         this.trainstatus = null;
+        this.lasttrainstatus = null;
         this.predictresults = null;
+        this.lastpredictresults = null;
         this.source = null;
         this.ui_elements = {
             "aimane-main" : document.querySelector(".aimane-main"), //.style.display = "Flex" or "None"
@@ -49,6 +52,7 @@ class AIManeUI {
                 "conn-serverlist-box" : document.querySelector(".conn-serverlist-box div"), // For add server list button
                 "conn-serverlist-button" : document.querySelector(".conn-serverlist-button"), //.style.display = "Flex" or "None"
                 "conn-address-field" : document.querySelector("#form-field-srvaddress"), //.value = "192.168.1.2:5000"
+                "conn-ok-button" : document.querySelector(".connect") //Trigger click event
         };
         this.server_list = [
             {
@@ -65,7 +69,103 @@ class AIManeUI {
             }
         ];
 
+        this.init();
+
     }
+    
+    showElement(element_name) {
+        this.ui_elements[element_name].style.display = "Flex";
+    }
+
+    hideElement(element_name) {
+        this.ui_elements[element_name].style.display = "none";
+    }
+
+    changeText(element_name, text) {
+        this.ui_elements[element_name].textContent = text;
+    }
+
+    getText(element_name) {
+        return this.ui_elements[element_name].textContent;
+    }
+
+    changeIcon(element_name, icon) {
+        let icon_name = "fas fa-" + icon;
+        this.ui_elements[element_name].className = icon_name;
+    }
+
+    getIcon(element_name) {
+        return this.ui_elements[element_name].className;
+    }
+
+    changeProgress(element_name, progress) {
+        this.ui_elements[element_name].style.width = progress + "%";
+    }
+
+    getProgress(element_name) {
+        return this.ui_elements[element_name].style.width;
+    }
+
+    init() {
+        this.consoleLog("「AIMANE」 by Nattawut Manjai-araya  v1.0.0");
+        // Init UI
+
+        // Prepare server list
+        this.createServerSelectionButton();
+
+        // Add event listener to button
+        this.buttonTriggerSetup();
+        this.showConnectScreen();
+    }
+
+    buttonTriggerSetup() {
+        this.ui_elements["conn-ok-button"].addEventListener("click", () => {
+            // Called function to change server
+            //getServerURLFromFields return [address, port, protocol];
+            let serverdata = this.getServerURLFromFields();
+            this.changeServer(serverdata[0], serverdata[1], serverdata[2]);
+        });        
+    }
+
+    showConnectScreen() {
+        this.showElement("box-connect");
+        this.hideElement("box-disconnect");
+        this.hideElement("aimane-main");
+    }
+    
+    showDisconnectScreen() {
+        this.hideElement("box-connect");
+        this.showElement("box-disconnect");
+        this.hideElement("aimane-main");
+    }
+
+    showMainScreen() {
+        this.hideElement("box-connect");
+        this.hideElement("box-disconnect");
+        this.showElement("aimane-main");
+    }
+
+    logmane(header = null, subheader = null, percentage = null, icon = null) {
+        if (header != null) {
+            if(this.getText("lmn-title") != header) { this.changeText("lmn-title", header);}
+        }
+        if (subheader != null) {
+            if(this.getText("lmn-subtitle") != subheader) { this.changeText("lmn-subtitle", subheader);}
+        }
+        if (percentage != null) {
+            this.changeText("lmn-percentage", percentage+"%");
+            if(this.getProgress("lmn-progress") != percentage) { this.changeProgress("lmn-progress", percentage);}
+        }
+
+        if (icon != null) {
+            if(this.getIcon("lmn-icon") != icon) { this.changeIcon("lmn-icon", icon);}
+        }
+    }
+
+
+
+
+
 
 
     createServerSelectionButton() {
@@ -90,13 +190,15 @@ class AIManeUI {
 
     changeServer(address, port, protocol) {
         // Change server address and port
-        this.server_address = address;
-        this.server_port = port;
-        this.server_protocol = protocol;
-        console.log("Server changed to " + this.server_protocol + "://" + this.server_address + ":" + this.server_port);
+        this.serverAddress = address;
+        this.serverPort = port;
+        this.serverProtocol = protocol;
+        this.consoleLog("Server changed to " + this.serverProtocol + "://" + this.serverAddress + ":" + this.serverPort,"INFO");
         // If connected, disconnect and reconnect
         if (this.connected){
             this.disconnect();
+        }else{
+            this.connect();
         }
         
     }
@@ -201,9 +303,16 @@ class AIManeUI {
     
 
     // Setup SSE
-    setupSSE() {
-        var sse_url = `${this.serverProtocol}://${this.serverAddress}:${this.serverPort}${this.serverSSERoute}`;
-        this.source = new EventSource(sse_url);
+    async setupSSE() {
+        let sse_url = `${this.serverProtocol}://${this.serverAddress}:${this.serverPort}${this.serverSSERoute}`;
+        // Check if SSE is already connected
+        if (this.connected || this.source != null) {
+            // Disconnect first
+            this.disconnect();
+            this.connected = false;
+        }
+
+        this.source = await (new EventSource(sse_url));
         // Check SSE connection
         this.source.onopen = function(e) {
             console.log("[INFO] SSE connected to " + sse_url);
@@ -215,94 +324,161 @@ class AIManeUI {
         };
         console.log("[INFO] SSE setup at " + sse_url);
         // Listen for messages from server type: status
-        this.source.addEventListener('status', function(e) {
+        this.source.addEventListener('status', (e) => {
             var data = JSON.parse(e.data);
             console.log("[INFO] SSE status: ");
             console.log(data);
-            this.status = data.status;
-            //document.getElementById("status").innerHTML = this.status;
+            this.status = data;
+        
+            // Handle Status
+            this.handleStatus(this.status);
+            // document.getElementById("status").innerHTML = this.status;
         }, false);
         // Listen for messages from server type: trainstatus
-        this.source.addEventListener('trainstatus', function(e) {
+        this.source.addEventListener('trainstatus', (e) => {
             var data = JSON.parse(e.data);
             console.log("[INFO] SSE trainstatus: ");
             console.log(data);
-            this.trainstatus = data.trainstatus;
+            this.trainstatus = data;
             //document.getElementById("trainstatus").innerHTML = this.trainstatus;
         }, false);
         // Listen for messages from server type: predictresults
-        this.source.addEventListener('predictresults', function(e) {
+        this.source.addEventListener('predictresults', (e) => {
             var data = JSON.parse(e.data);
             console.log("[INFO] SSE predictresults: ");
             console.log(data);
-            this.predictresults = data.predictresults;
+            this.predictresults = data;
             //document.getElementById("predictresults").innerHTML = this.predictresults;
         }, false);
 
-        return this.connected;
-
+        return this.source;
     }
 
     disconnectSSE() {
         this.source.close();
-        console.log("[INFO] SSE disconnected");
+        this.consoleLog("[INFO] SSE disconnected from " + this.serverAddress + ":" + this.serverPort,"WARN");
     }
 
 
-
-
-
     connect() {
-        let status = this.setupSSE();
-        if (status) {
-            console.log("[INFO] Connected to server at " + this.serverAddress + ":" + this.serverPort);
+        let ssesource = this.setupSSE();
+        if (ssesource) {
+            this.consoleLog("Connected to server at " + this.serverAddress + ":" + this.serverPort,"SUCCESS");
+            this.connected = true;
+            this.showMainScreen();
         }else{
-            console.log("[ERROR] Connection to server at " + this.serverAddress + ":" + this.serverPort + " failed");
-
+            this.consoleLog("Connection to server at " + this.serverAddress + ":" + this.serverPort + " failed", "ERROR");
+            this.connected = false;
+            this.showConnectScreen();
         }
-        
-
     }
 
     disconnect() {
         this.connected = false;
-        console.log("[INFO] Disconnected from server at " + this.serverAddress + ":" + this.serverPort);
+        this.consoleLog("[INFO] Disconnected from server at " + this.serverAddress + ":" + this.serverPort,"WARN");
     }
 
 
-    showElement(element_name) {
-        this.ui_elements[element_name].style.display = "Flex";
-    }
 
-    hideElement(element_name) {
-        this.ui_elements[element_name].style.display = "none";
-    }
-
-    changeText(element_name, text) {
-        this.ui_elements[element_name].textContent = text;
-    }
-
-    changeIcon(element_name, icon) {
-        let icon_name = "fas fa-" + icon;
-        this.ui_elements[element_name].className = icon_name;
-    }
-
-
-    consoleLog(text,type = "INFO", color = "black") {
-        var d = new Date();
-        var n = d.toLocaleTimeString();
-        var log = document.createElement("p");
-        log.textContent = n + " [" + type + "] " + text;
-        log.style.color = color;
-        this.ui_elements["console"].appendChild(log);
-        this.ui_elements["console"].scrollTop = this.ui_elements["console"].scrollHeight;
-    }
-
+    consoleLog(Text, Type = "", Color = "", Bold = false, Italic = false) {
+        let logStyle = "";
     
-
-
+        // 「AIMANE」
+        switch (Type.toUpperCase()) {
+            case "INFO":
+                logStyle = "background-color: #E60962; color: white;";
+                break;
+            case "SUCCESS":
+                logStyle = "background-color: green; color: white;";
+                break;
+            case "WARN":
+                logStyle = "background-color: orange; color: white;";
+                break;
+            case "ERROR":
+                logStyle = "background-color: red; color: white;";
+                break;
+            default:
+                break;
+        }
     
+        if (Color) {
+            logStyle = `background-color: ${Color}; color: white;`;
+        }
+    
+        // Apply Bold and Italic styles if specified
+        if (Bold && Italic) {
+            Text = `<b><i>${Text}</i></b>`;
+        } else if (Bold) {
+            Text = `<b>${Text}</b>`;
+        } else if (Italic) {
+            Text = `<i>${Text}</i>`;
+        }
+    
+        const logMessage = `%c${Type ? " [" + Type + "] " : ""}${Text}`;
+    
+        console.log(logMessage+" ", logStyle);
+    }
+
+
+
+    handleStatus(status) {
+
+        // {
+        //     "time": "2023-07-20 00:01:52",
+        //     "status": "Server is started",
+        //     "stage": "Starting",
+        //     "percentage": 0
+        // }
+
+        if (status != null && status != this.lastStatus) {
+            console.log("[INFO] Time: " + status.time + " | Status: " + status.status + " | Stage: " + status.stage + " | Percentage: " + status.percentage);
+            // If stage have this string "Preparing" 
+            let istatus = "";
+            let icon = "";
+
+            if(status.stage.includes("Preparing")){
+                istatus = "Preparing"
+            }else if(status.stage.includes("Repair")){
+                istatus = "Repair"
+            }else if(status.stage.includes("Training")){
+                istatus = "Training"
+            }else if(status.stage.includes("Predict")){
+                istatus = "Predict"
+            }else if(status.stage.includes("Done")){
+                istatus = "Done"
+            }else{
+                istatus = "Unknown"
+            }
+
+            switch(istatus){
+                case "Preparing":
+                    icon = "file-download"
+                    break;
+                case "Repair":
+                    icon = "wrench"
+                    break;
+                case "Training":
+                    icon = "robot"
+                    break;
+                case "Predict":
+                    icon = "magic"
+                    break;
+                case "Done":
+                    icon = "check"
+                    break;
+                default:
+                    icon = "greater-than-equal"
+            }
+
+   
+            this.logmane(status.stage, status.status, status.percentage, icon);
+
+            this.lastStatus = status;
+        }
+    }
+
 }
+
 
   const aiManeUI = new AIManeUI();
   
