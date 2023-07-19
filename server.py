@@ -2,8 +2,21 @@ import time
 from flask import Flask, request, jsonify, Response
 from app import aimane
 from flask import request, render_template
+from flask_cors import CORS, cross_origin
+
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
+# Set the allowed origins in a list
+# allowed_origins = [
+#     'https://me.nicezki.com/',
+#     'https://nicezki.com/',
+#     'https://localhost/',
+#     'https://127.0.0.1/',
+#     'https://192.168.1.2/'
+# ]
+
+# CORS(app, resources={r"/*": {"origins": allowed_origins, "supports_credentials": True}})
 
 aimane = aimane.AiMane()
 
@@ -279,6 +292,19 @@ def index():
     return render_template('main.html')
 
 
+@app.route('/test', methods=['GET'])
+def test1():
+    return render_template('test.html')
+
+
+# Add route for script/main.js
+@app.route('/script/main.js', methods=['GET'])
+def script():
+    return render_template('script/main.js')
+
+
+
+
 
 # # Initialize the app
 # if __name__ == '__main__':
@@ -290,7 +316,10 @@ if __name__ == '__main__':
     #app.run(debug=True, use_reloader=False)
     # Run as production server
     aimane.sysmane.write_status("Server is started")
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    # ssl at /app/ssl/rootCA-key.pem and /app/ssl/rootCA.pem
+    
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/local.pem', 'app/ssl/local-key.pem'))
+    
 
 
 

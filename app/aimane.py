@@ -47,7 +47,8 @@ class AiMane:
             "train_count" : [],
             "validate_count" : [],
             "last_prediction" : [],
-            "last_prediction_uuid" : None
+            "last_prediction_uuid" : None,
+            "highest_batch" : 0,
         }
         self.prediction_result = {
             "result" : None, 
@@ -79,8 +80,8 @@ class AiMane:
     def getstatus(self):
         return self.sysmane.getstatus()
 
-    def set_train_status(self, status=None, stage=None, percentage=None, epoch=None, batch=None, loss=None, acc=None):
-        self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
+    def set_train_status(self, status=None, stage=None, percentage=None, epoch=None, batch=None, loss=None, acc=None, total_epoch=None, finished = None, result=None):
+        self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc, total_epoch=total_epoch, finished=finished, result=result)
 
 
     def set_prediction_result(self, result=None, percentage=None, other_result=None, other_percentage=None, uuid=None, image_data=None,numpy_array=None):
@@ -104,6 +105,55 @@ class AiMane:
 
         return self.prediction_result
     
+    def set_training_config(self, use_gpu=None, epochs=None, stop_on_acc=None, validation_split=None, shuffle=None, usercontent=None, classes=None, class_names=None, uc_classes=None, uc_class_names=None):
+        if use_gpu is not None:
+            self.training_config["use_gpu"] = use_gpu
+            self.sysmane.write_status("[CONFIG] Training Config: use_gpu is now set to " + str(use_gpu))
+        if epochs is not None:
+            self.training_config["epochs"] = epochs
+            self.sysmane.write_status("[CONFIG] Training Config: epochs is now set to " + str(epochs))
+        if stop_on_acc is not None:
+            self.training_config["stop_on_acc"] = stop_on_acc
+            self.sysmane.write_status("[CONFIG] Training Config: stop_on_acc is now set to " + str(stop_on_acc))
+        if validation_split is not None:
+            self.training_config["validation_split"] = validation_split
+            self.sysmane.write_status("[CONFIG] Training Config: validation_split is now set to " + str(validation_split))
+        if shuffle is not None:
+            self.training_config["shuffle"] = shuffle
+            self.sysmane.write_status("[CONFIG] Training Config: shuffle is now set to " + str(shuffle))
+        if usercontent is not None:
+            self.training_config["usercontent"] = usercontent
+            self.sysmane.write_status("[CONFIG] Training Config: usercontent is now set to " + str(usercontent))
+        if classes is not None:
+            self.training_config["classes"] = classes
+            self.sysmane.write_status("[CONFIG] Training Config: classes is now set to " + str(classes))
+        if class_names is not None:
+            self.training_config["class_names"] = class_names
+            self.sysmane.write_status("[CONFIG] Training Config: class_names is now set to " + str(class_names))
+        if uc_classes is not None:
+            self.training_config["uc_classes"] = uc_classes
+            self.sysmane.write_status("[CONFIG] Training Config: uc_classes is now set to " + str(uc_classes))
+        if uc_class_names is not None:
+            self.training_config["uc_class_names"] = uc_class_names
+            self.sysmane.write_status("[CONFIG] Training Config: uc_class_names is now set to " + str(uc_class_names))
+        
+        # self.training_config = {
+        #     "use_gpu" : True,
+        #     "epochs": 25,
+        #     "stop_on_acc" : 1.00,
+        #     # "batch_size": 60000,
+        #     "validation_split": 0.2,
+        #     "shuffle": True,
+        #     "usercontent" : True,
+        #     "classes" : 10,
+        #     "class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        #     "uc_classes" : 11,
+        #     "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star"],
+        # }
+
+    
+
+
     def get_prediction_result(self,as_json=True):
         status = self.prediction_result
         if as_json:
@@ -846,8 +896,19 @@ class VerboseCallback(Callback):
 
     def on_batch_end(self, batch, logs=None):
         if logs is not None and "loss" in logs and "accuracy" in logs:
-            # print("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]))
-            percentage = (batch + 1) / 60000 * 100
+            # #Save highest batch for calculating percentage in self.aimane.self.running_config["highest_batch"]
+            # if batch > self.aimane.running_config["highest_batch"]:
+            #     self.aimane.running_config["highest_batch"] = batch
+            
+            # # print("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]))
+            # if self.aimane.running_config["highest_batch"] == 0 or self.percentage == 0:
+            #     percentage = (batch + 1) / 60000 * 100 
+            # else:
+            #     # Percentage of 1 epoch
+            #     percentage = ((batch + 1) / self.aimane.running_config["highest_batch"] * 100) 
+            #     # Weight of 1 epoch to the total percentage
+            #     percentage = percentage / 100 * (1 / self.aimane.training_config["epochs"])
+            percentage = percentage = (batch + 1) / 60000 * 100 
             percentage = round(percentage + self.percentage, 3)
             self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=percentage)
             # self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
@@ -865,7 +926,25 @@ class VerboseCallback(Callback):
                 self.model.stop_training = True
                 self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
                 self.aimane.write_model_acc(logs["accuracy"])
+                self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
             elif self.params is not None and epoch + 1 == self.params["epochs"]:
                 self.sysmane.write_status("Training model finished on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
                 self.aimane.write_model_acc(logs["accuracy"])
+                self.sysmane.set_train_status(status="Finished training", stage="Finished on epoch {}".format(epoch + 1), finished=True, result="Training model finished on set epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+
+            #Check if training is finished (Spare case if model.stop_training is not working)
+            if self.model is not None and self.model.stop_training:
+                self.sysmane.write_status("Training model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
+                self.aimane.write_model_acc(logs["accuracy"])
+                self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Training model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+
+
+
+
+    # This is the lib not the main function
+    # Prevent the program from running when imported
+    if __name__ == "__main__":
+        # Print Red Error Message
+        print("[ERR] AImane is a library, please run the program from server.py file.")
+        exit(0)
 
