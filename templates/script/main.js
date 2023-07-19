@@ -6,6 +6,7 @@ class AIManeUI {
         this.serverAddress = "192.168.1.2"
         this.serverPort = "5000";
         this.serverSSERoute = "/api/sse/events";
+        this.serverURL = this.serverProtocol + "://" + this.serverAddress + ":" + this.serverPort;
         this.connected = false;
         this.status = null;
         this.laststatus = null;
@@ -13,7 +14,12 @@ class AIManeUI {
         this.lasttrainstatus = null;
         this.predictresults = null;
         this.lastpredictresults = null;
+        this.trainingtimerstart = null;
         this.source = null;
+        this.finishedTraining = true;
+        this.createdEpochProgressBox = false;
+        this.correctPredictionButtonCreated = false;
+        this.canvas = null;
         this.ui_elements = {
             "aimane-main" : document.querySelector(".aimane-main"), //.style.display = "Flex" or "None"
                 "logmane": document.querySelector(".logmane"), //.className = "fas fa-file-download"
@@ -44,10 +50,22 @@ class AIManeUI {
                     "rmn-number" : document.querySelector(".rmn-number div h1"), //.textContent = "0"
                     "rmn-teachtext" : document.querySelector(".rmn-teachtext div h2"), //.textContent = "Teach me if I'm wrong"
                     "rmn-trytext" : document.querySelector(".rmn-trytext div h4"), //.textContent = "Try writing your number"
-                    "rmn-teachbox" : document.querySelector(".rmn-teachbox"), //.style.display = "Flex" or "None"
-            "box-disconnect" : document.querySelector(".box-disconnect"), //.style.display = "Flex" or "None"
+                    "rmn-teachbox" : document.querySelector(".rmn-teachbox"), //.style.display = "Flex" or "None" //Trigger click event
+                    "rmn-teachclasses" : document.querySelector(".rmn-teach"), //.style.display = "Flex" or "None"
+                        "rmn-template-retrain" : document.querySelector(".btn-retrain"),
+                    "rmn-btn-prepare" : document.querySelector(".btn-prepare"), //Trigger click event
+                    "rmn-btn-repair" : document.querySelector(".btn-repair"), //Trigger click event
+                    "rmn-btn-rtuc" : document.querySelector(".btn-rtuc"), //Trigger click event
+                    "rmn-btn-train" : document.querySelector(".btn-train"), //Trigger click event
+                    "rmn-btn-reset" : document.querySelector(".btn-reset"), //Trigger click event
+                    "rmn-btn-guess" : document.querySelector(".btn-guess"), //Trigger click event
+                    "rmn-btn-wrong" : document.querySelector(".btn-wrong"), //Trigger click event
+                        "box-disconnect" : document.querySelector(".box-disconnect"),
+                    "rmn-canvas" : document.querySelector("canvas#rmn-canvas"), //For add canvas
                 "disc-header" : document.querySelector(".disc-header div h2"), //.textContent = "Disconnected from AIMANE Server​"
                 "disc-subheader" : document.querySelector(".disc-subheader div h5"), //.textContent = "Please check your connection"
+                "disc-reconnect" : document.querySelector(".disc-reconnect"), //Trigger click event
+                "disc-selectserver" : document.querySelector(".disc-selectserver"), //Trigger click event
             "box-connect" : document.querySelector(".box-connect"), //.style.display = "Flex" or "None"
                 "conn-serverlist-box" : document.querySelector(".conn-serverlist-box div"), // For add server list button
                 "conn-serverlist-button" : document.querySelector(".conn-serverlist-button"), //.style.display = "Flex" or "None"
@@ -116,6 +134,9 @@ class AIManeUI {
         // Add event listener to button
         this.buttonTriggerSetup();
         this.showConnectScreen();
+
+        // Setup canvas
+        this.setupDrawCanvas();
     }
 
     buttonTriggerSetup() {
@@ -125,7 +146,139 @@ class AIManeUI {
             let serverdata = this.getServerURLFromFields();
             this.changeServer(serverdata[0], serverdata[1], serverdata[2]);
         });        
+        this.ui_elements["disc-reconnect"].addEventListener("click", () => {
+            // Called function to change server
+            //getServerURLFromFields return [address, port, protocol];
+            this.reconnect();
+        });
+        this.ui_elements["disc-selectserver"].addEventListener("click", () => {
+
+            this.showConnectScreen();
+        });
+        this.ui_elements["rmn-btn-prepare"].addEventListener("click", () => {
+            this.aimane_prepare();
+        });
+        this.ui_elements["rmn-btn-repair"].addEventListener("click", () => {
+            this.aimane_repair();
+        });
+        this.ui_elements["rmn-btn-rtuc"].addEventListener("click", () => {
+            this.aimane_rtuc();
+        });
+        this.ui_elements["rmn-btn-train"].addEventListener("click", () => {
+            this.aimane_train();
+        });
+        this.ui_elements["rmn-btn-reset"].addEventListener("click", () => {
+            this.resetCanvas();
+        });
+        this.ui_elements["rmn-btn-guess"].addEventListener("click", () => {
+            this.predict();
+        });
+        this.ui_elements["rmn-btn-wrong"].addEventListener("click", () => {
+            this.aimane_wrong();
+        });
     }
+
+    aimane_prepare() {
+        // send GET api to {server}/api/prepare
+        fetch(this.serverURL + "/api/prepare", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                this.consoleLog("Prepare request sent successfully", "SUCCESS");
+            }
+            else {
+                this.consoleLog("Prepare request sent failed", "ERROR");
+            }
+        });
+    }
+
+    aimane_repair() {
+        // send GET api to {server}/api/repairdataset
+        fetch(this.serverURL + "/api/repairdataset", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                this.consoleLog("Repair request sent successfully", "SUCCESS");
+            }
+            else {
+                this.consoleLog("Repair request sent failed", "ERROR");
+            }
+        });
+    }
+
+    aimane_rtuc() {
+        // send GET api to {server}/api/rtuc
+        fetch(this.serverURL + "/api/rtuc", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                this.consoleLog("Resource to Usercontent request sent successfully", "SUCCESS");
+            }
+            else {
+                this.consoleLog("Resources to Usercontents request sent failed", "ERROR");
+            }
+        });
+    }
+
+    aimane_train() {
+        // send GET api to {server}/api/train
+        fetch(this.serverURL + "/api/train", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                this.consoleLog("Train request sent successfully", "SUCCESS");
+            }
+            else {
+                this.consoleLog("Train request sent failed", "ERROR");
+            }
+        });
+    }
+
+    aimane_correctprediction(defclass) {
+        // send GET api to {server}/api//api/definelastpredict?label={defclass}
+        fetch(this.serverURL + "/api/definelastpredict?label=" + defclass, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                this.consoleLog("Correct prediction to " + defclass + " request sent successfully", "SUCCESS");
+            }
+            else {
+                this.consoleLog("Correct prediction to " + defclass + " request sent failed", "ERROR");
+            }
+        });
+    }
+
+    setupDrawCanvas(){
+        this.canvas = new fabric.Canvas(this.ui_elements["rmn-canvas"]);
+        this.canvas.backgroundColor = "#000000";
+        this.canvas.renderAll();
+        this.canvas.isDrawingMode = true;
+        this.canvas.freeDrawingBrush.width = 10;
+        this.canvas.freeDrawingBrush.color = "white";
+
+    }
+
+    resetCanvas() {
+        this.canvas.clear();
+        this.canvas.backgroundColor = "#000000";
+        this.canvas.renderAll();
+    }
+
 
     showConnectScreen() {
         this.showElement("box-connect");
@@ -153,7 +306,8 @@ class AIManeUI {
             if(this.getText("lmn-subtitle") != subheader) { this.changeText("lmn-subtitle", subheader);}
         }
         if (percentage != null) {
-            this.changeText("lmn-percentage", percentage+"%");
+            let rpercentage = this.roundDown(percentage, 2);
+            this.changeText("lmn-percentage", rpercentage+"%");
             if(this.getProgress("lmn-progress") != percentage) { this.changeProgress("lmn-progress", percentage);}
         }
 
@@ -162,10 +316,77 @@ class AIManeUI {
         }
     }
 
+    smallmane(title = null, icon = null, time = null) {
+        if (title != null) {
+            if(this.getText("smn-title") != title) { this.changeText("smn-title", title);}
+        }
+        if (icon != null) {
+            if(this.getIcon("smn-icon") != icon) { this.changeIcon("smn-icon", icon);}
+        }
+        if (time != null) {
+            if(this.getText("smn-time") != time) { this.changeText("smn-time", time);}
+        }
+    }
 
+    smtrainstatus(acc = null, loss = null, batch = null, epoch = null, total_epoch = null) {
+        if (acc != null) {
+            if(this.getText("smn-acc") != acc) { this.changeText("smn-acc", acc);}
+        }
+        if (loss != null) {
+            if(this.getText("smn-loss") != loss) { this.changeText("smn-loss", loss);}
+        }
+        if (batch != null) {
+            if(this.getText("smn-batch") != batch) { this.changeText("smn-batch", batch);}
+        }
+        if (epoch != null) {
+            epoch = epoch + "/" + total_epoch;
+            if(this.getText("smn-epoch") != epoch) { this.changeText("smn-epoch", epoch);}
+        }
+    }
 
+    resultmane(number = null) {
+        if (number != null) {
+            if(this.getText("rmn-number") != number) { this.changeText("rmn-number", number);}
+        }
+        let guessText = [
+            "I think it's a ",
+            "Hmm, I think it's a ",
+            "Wow it's a ",
+            "Let me guess, it's a ",
+            "From my experience, it's a ",
+            "I'm pretty sure it's a ",
+            "I'm guessing it's a ",
+            "Maybe it's a ",
+            "I think today lotto is"
+        ]
+        let guess = guessText[Math.floor(Math.random() * guessText.length)];
+        if(this.getText("rmn-guess") != guess) { this.changeText("rmn-guess", guess);}
 
+        let teachText = [
+            "Teach me if I'm wrong",
+            "You can teach me",
+            "I'm still learning",
+            "I'm wrong?",
+            "Oh, I'm wrong?",
+            "Teach me!!",
+        ]
+        let teach = teachText[Math.floor(Math.random() * teachText.length)];
+        if(this.getText("rmn-teachtext") != teach) { this.changeText("rmn-teachtext", teach);}
 
+        let tryText = [
+            "Try writing your number",
+            "It's your turn",
+            "Let's try",
+            "Let's write",
+            "Write your number",
+            "Write your number here",
+            "Give me your number",
+            "It's lotto time",
+        ]
+        let tryy = tryText[Math.floor(Math.random() * tryText.length)];
+        if(this.getText("rmn-trytext") != tryy) { this.changeText("rmn-trytext", tryy);}
+
+    }
 
 
     createServerSelectionButton() {
@@ -186,6 +407,87 @@ class AIManeUI {
             this.ui_elements["conn-serverlist-box"].appendChild(newdiv);
         }
     }
+
+    createCorrectPredictionButton(classes) {
+        if(this.correctPredictionButtonCreated) {
+            this.consoleLog("Correct prediction button already created", "WARN");
+            return;
+        }
+        //classes= ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Star']
+
+        for (var i = 0; i < classes.length; i++) {
+            let newdiv = this.ui_elements["rmn-template-retrain"].cloneNode(true);
+            newdiv.className = "elementor-element elementor-element-d05252b elementor-align-center elementor-widget__width-initial btn-retrain elementor-widget elementor-widget-button btn-retrain-" + classes[i];
+            newdiv.querySelector(".elementor-button-text").textContent = classes[i];
+            newdiv.style.display = "flex";
+            // Add property to button for easy access class
+            newdiv.trainclass = i
+            // Add event listener to button
+            newdiv.addEventListener("click", () => {
+                // Called function to correct prediction
+                this.aimane_correctprediction(newdiv.trainclass);
+            });
+            this.ui_elements["rmn-teachclasses"].appendChild(newdiv);
+        }
+        this.correctPredictionButtonCreated = true;
+    }
+
+
+    deleteCorrectPredictionButton() {
+        if(!this.correctPredictionButtonCreated) {
+            this.consoleLog("Correct prediction button not created", "WARN");
+            return;
+        }
+        // Delete all button with loop
+        for (var i = 0; i < this.ui_elements["rmn-teachclasses"].childElementCount; i++) {
+            this.ui_elements["rmn-teachclasses"].removeChild(this.ui_elements["rmn-teachclasses"].children[0]);
+        }
+        this.correctPredictionButtonCreated = false;
+    }
+
+
+    predict() {
+        let dataURL = this.canvas.toDataURL();
+        let blob = this.dataURLtoBlob(dataURL);
+    
+        let formData = new FormData();
+        formData.append('image', blob, 'image.png');
+    
+        fetch(this.serverProtocol + "://" + this.serverAddress + ":" + this.serverPort + "/api/predict", {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => {
+            if (!response.ok) {
+                this.consoleLog("Error: " + response.status + " " + response.statusText, "ERROR");
+            }
+            return response.json();
+        })
+        .then(data => {
+            this.consoleLog("Prediction is: " + data[0], "SUCCESS");
+            this.resultmane(data[0]);
+        })
+        .catch(error => {
+            this.consoleLog("Error: " + error.message, "ERROR");
+        });
+    }
+
+    dataURLtoBlob(dataURL) {
+        let parts = dataURL.split(';base64,');
+        let contentType = parts[0].split(':')[1];
+        let raw = window.atob(parts[1]);
+        let rawLength = raw.length;
+        let uInt8Array = new Uint8Array(rawLength);
+
+        for (let i = 0; i < rawLength; ++i) {
+            uInt8Array[i] = raw.charCodeAt(i);
+        }
+
+        return new Blob([uInt8Array], { type: contentType });
+    }
+        
+
+        
     
 
     changeServer(address, port, protocol) {
@@ -193,6 +495,7 @@ class AIManeUI {
         this.serverAddress = address;
         this.serverPort = port;
         this.serverProtocol = protocol;
+        this.serverURL = this.serverProtocol + "://" + this.serverAddress + ":" + this.serverPort;
         this.consoleLog("Server changed to " + this.serverProtocol + "://" + this.serverAddress + ":" + this.serverPort,"INFO");
         // If connected, disconnect and reconnect
         if (this.connected){
@@ -203,8 +506,20 @@ class AIManeUI {
         
     }
 
+    reconnect() {
+        this.disconnect();
+        this.connect();
+    }
+
+
     createEpochProgressBox(total_epoch) {
+        // If already created, not create again
+        if (this.createdEpochProgressBox) {
+            this.consoleLog("Epoch progress box already created","WARN");
+            return;
+        }
         // Append copy of slot-passive to topdiv and add new class ep-xxx (loop from total_epoch start from 1)
+        this.consoleLog("Create epoch progress box with " + total_epoch + " epoch","INFO");
 
         for (var i = 1; i <= total_epoch; i++) {
             var newdiv = this.ui_elements["smn-template-passive"].cloneNode(true);
@@ -216,22 +531,25 @@ class AIManeUI {
             this.ui_elements["smn-box-progress-elem"] = document.querySelector(".ep-" + i);
 
         }
+        this.createdEpochProgressBox = true;
     }
 
 
     deleteAllEpochProgressBox() {
+        this.consoleLog("Delete all epoch progress box","INFO");
         // Delete all element with class epochbox
         var epochbox = document.querySelectorAll(".epochbox");
         for (var i = 0; i < epochbox.length; i++) {
             epochbox[i].remove();
         }
+        this.createdEpochProgressBox = false;
     }
 
 
     setEpochActive(epoch, text = epoch) {
         // Select slot-passive with class ep-xxx and change to slot-active
         var olddiv = document.querySelector(".ep-" + epoch);
-        var newdiv = this.ui_elements["smn-slot-active"].cloneNode(true);
+        var newdiv = this.ui_elements["smn-template-active"].cloneNode(true);
         newdiv.className = "elementor-element elementor-element-2a948e0 e-con-full slot-active e-con epochbox ep-" + epoch;
         newdiv.querySelector(".elementor-heading-title").textContent = text;
         newdiv.style.display = "flex";
@@ -243,7 +561,7 @@ class AIManeUI {
 
     setEpochPassive(epoch,text = epoch) {
         var olddiv = document.querySelector(".ep-" + epoch);
-        var newdiv = this.ui_elements["smn-slot-passive"].cloneNode(true);
+        var newdiv = this.ui_elements["smn-template-passive"].cloneNode(true);
         newdiv.className = "elementor-element elementor-element-aaa4191 e-con-full slot-passive e-con epochbox ep-" + epoch;
         newdiv.querySelector(".elementor-heading-title").textContent = text;
         newdiv.style.display = "flex";
@@ -253,7 +571,7 @@ class AIManeUI {
 
     setEpochDone(epoch,text = epoch) {
         var olddiv = document.querySelector(".ep-" + epoch);
-        var newdiv = this.ui_elements["smn-slot-done"].cloneNode(true);
+        var newdiv = this.ui_elements["smn-template-done"].cloneNode(true);
         newdiv.className = "elementor-element elementor-element-0ade0b9 e-con-full slot-done e-con epochbox ep-" + epoch;
         newdiv.querySelector(".elementor-heading-title").textContent = text;
         newdiv.style.display = "flex";
@@ -299,6 +617,12 @@ class AIManeUI {
         return [address, port, protocol];
 
     }
+
+
+    roundDown(num, precision) {
+        precision = Math.pow(10, precision)
+        return Math.floor(num * precision) / precision
+    }
     
     
 
@@ -314,13 +638,15 @@ class AIManeUI {
 
         this.source = await (new EventSource(sse_url));
         // Check SSE connection
-        this.source.onopen = function(e) {
+        this.source.onopen = (e) => {
             console.log("[INFO] SSE connected to " + sse_url);
             this.connected = true;
         };
-        this.source.onerror = function(e) {
+        this.source.onerror = (e) => {
             console.log("[ERROR] SSE connection error");
             this.connected = false;
+            this.disconnect();
+            this.showDisconnectScreen();
         };
         console.log("[INFO] SSE setup at " + sse_url);
         // Listen for messages from server type: status
@@ -340,6 +666,7 @@ class AIManeUI {
             console.log("[INFO] SSE trainstatus: ");
             console.log(data);
             this.trainstatus = data;
+            this.handleTrainStatus(this.trainstatus);
             //document.getElementById("trainstatus").innerHTML = this.trainstatus;
         }, false);
         // Listen for messages from server type: predictresults
@@ -348,6 +675,8 @@ class AIManeUI {
             console.log("[INFO] SSE predictresults: ");
             console.log(data);
             this.predictresults = data;
+            this.handlePredictResults(this.predictresults);
+            
             //document.getElementById("predictresults").innerHTML = this.predictresults;
         }, false);
 
@@ -365,6 +694,7 @@ class AIManeUI {
         if (ssesource) {
             this.consoleLog("Connected to server at " + this.serverAddress + ":" + this.serverPort,"SUCCESS");
             this.connected = true;
+            this.deleteAllEpochProgressBox();
             this.showMainScreen();
         }else{
             this.consoleLog("Connection to server at " + this.serverAddress + ":" + this.serverPort + " failed", "ERROR");
@@ -433,48 +763,235 @@ class AIManeUI {
         if (status != null && status != this.lastStatus) {
             console.log("[INFO] Time: " + status.time + " | Status: " + status.status + " | Stage: " + status.stage + " | Percentage: " + status.percentage);
             // If stage have this string "Preparing" 
-            let istatus = "";
             let icon = "";
 
-            if(status.stage.includes("Preparing")){
-                istatus = "Preparing"
-            }else if(status.stage.includes("Repair")){
-                istatus = "Repair"
-            }else if(status.stage.includes("Training")){
-                istatus = "Training"
-            }else if(status.stage.includes("Predict")){
-                istatus = "Predict"
-            }else if(status.stage.includes("Done")){
-                istatus = "Done"
-            }else{
-                istatus = "Unknown"
-            }
-
-            switch(istatus){
-                case "Preparing":
+                if(status.stage.includes("Preparing")){
                     icon = "file-download"
-                    break;
-                case "Repair":
+                }
+                else if(status.stage.includes("Starting")){
+                    icon = "play"
+                }
+                else if(status.stage.includes("Repair")){
                     icon = "wrench"
-                    break;
-                case "Training":
+                }
+                else if(status.stage.includes("Training")){
                     icon = "robot"
-                    break;
-                case "Predict":
+                }
+                else if(status.stage.includes("Predict")){
                     icon = "magic"
-                    break;
-                case "Done":
+                }
+                else if(status.stage.includes("Done")){
                     icon = "check"
-                    break;
-                default:
+                }
+                else{
                     icon = "greater-than-equal"
-            }
+                }
 
    
             this.logmane(status.stage, status.status, status.percentage, icon);
 
             this.lastStatus = status;
         }
+    }
+
+    handleTrainHistory(data,finished = false,live_acc = null) {
+        // {
+            // "e1": 0.8696097135543823, 
+            // "e2": 0.9497954249382019
+        //},
+        // Check if data is not null and have at least 1 element
+        if (data != null && Object.keys(data).length > 0) {
+            // If finished training before
+            if (this.finishedTraining && this.trainingtimerstart == null) {
+                // Clear all
+                this.deleteAllEpochProgressBox();
+                //Setup new epoch progress box
+                this.createEpochProgressBox(this.trainstatus.total_epoch);
+            }
+
+            // Loop through each element in data
+            for (const [key, value] of Object.entries(data)) {
+                // setEpochPassive(epoch, acc)
+                // epoch is a number from 0 to total_epoch
+                let epoch = parseInt(key.replace("e", ""));
+                let rvalue = this.roundDown(value, 3);
+            // If finished the last epoch will use  this.setEpochDone(epoch, value);
+            // If not finished the last epoch will +1 from object entries and use this.setEpochActive(epoch,live_acc);
+            // Other will use  this.setEpochPassive(epoch, value); 
+                // Check if createdEpochProgressBox is false
+                if (!this.createdEpochProgressBox) {
+                    this.createEpochProgressBox(this.trainstatus.total_epoch);
+                }
+
+                if (finished) {
+                    // If this is the last epoch
+                    // use object entries to get the last epoch instead of using the this.trainstatus.total_epoch
+                    if (epoch == Object.keys(data).length) {
+                        this.setEpochDone(epoch, rvalue);
+                    }
+                    else {
+                        this.setEpochActive(epoch, rvalue);
+                    }
+                }
+                else {
+                    // If this is the last epoch + 1
+                    if (epoch == Object.keys(data).length + 1) {
+                        if (live_acc != null) {
+                            live_acc = this.roundDown(live_acc, 3);
+                        }
+                        this.setEpochDone(epoch,live_acc);
+                    }
+                    else {
+                        this.setEpochActive(epoch, rvalue);
+                    }
+                    
+                }
+            }
+        }
+    }            
+
+        
+
+    handleTrainStatus(data) {
+        // {"time": "2023-07-20 01:56:12",
+        // "status": "Not training",
+        // "stage": "Not running",
+        // "percentage": -1,
+        // "epoch": -1,
+        // "total_epoch": 25,
+        // "batch": -1,
+        // "loss": -1,
+        // "acc": -1,
+        // "history": {
+            // "e1": 0.8696097135543823, 
+            // "e2": 0.9497954249382019
+        // },
+        // "finished": false,
+        // "result": "Not ready"}
+
+        if (data != null && data != this.lastTrainStatus) {
+            // If this.createEpochProgressBox(this.trainstatus.total_epochs); is not called
+            if (!this.createdEpochProgressBox){
+                this.createEpochProgressBox(data.total_epoch);
+            }
+
+            // If status is "Training model"
+            if (data.status == "Training model") {
+                // If last status is not "Training model"
+                if (this.lastTrainStatus == null || this.lastTrainStatus.status != "Training model") {
+                    // Clear all
+                    this.deleteAllEpochProgressBox();
+                }
+                //If this.trainingtimerstart is null, start the training timer
+                if (this.trainingtimerstart == null) {
+                    this.handleTrainingTimer("start");
+                }
+                this.finishedTraining = false;
+                //convert from 0.123456 to 12.345% with rounddown 3 decimal 
+                let acctext = this.roundDown((data.acc * 100),3) + "%";
+                let losstext = this.roundDown((data.loss * 100),3) + "%";
+
+                this.smtrainstatus(acctext, losstext, data.batch, data.epoch, data.total_epoch);
+                // handleTrainHistory
+                // If data.acc is -1 then use null
+                let real_acc = data.acc == -1 ? null : data.acc;
+                this.handleTrainHistory(data.history,data.finished,real_acc);
+            }
+
+            // If status is "Finished training"
+            if (data.status == "Finished training") {
+                //If this.trainingtimerstart is not null, stop the training timer
+                if (this.trainingtimerstart != null) {
+                    this.handleTrainingTimer("stop");
+                }
+                this.finishedTraining = true;
+                
+                //convert from 0.123456 to 12.345% with rounddown 3 decimal 
+                let acctext = this.roundDown((data.acc * 100),3) + "%";
+                let losstext = this.roundDown((data.loss * 100),3) + "%";
+
+                this.smtrainstatus(acctext, losstext, data.batch, data.epoch, data.total_epoch);
+                // handleTrainHistory
+                // If data.acc is -1 then use null
+                let real_acc = data.acc == -1 ? null : data.acc;
+                this.handleTrainHistory(data.history,data.finished,real_acc);
+            }
+                
+
+            this.lastTrainStatus = data;
+        }
+    }
+
+    handleTrainingTimer(state = "stop") {
+        // When state is start, start the timer record start timer time to this.trainingtimerstart
+        // and update the timer every second by calculating the difference between current time and this.trainingtimerstart
+        if(state == "start"){
+            // Check if this.trainingtimerstart is not null
+            if(this.trainingtimerstart != null){
+                this.consoleLog("Training timer is already started", "WARN");
+            }
+            else{
+                this.trainingtimerstart = new Date();
+                this.trainingtimer = setInterval(() => {
+                    let now = new Date();
+                    let diff = now - this.trainingtimerstart;
+                    let diffsec = Math.floor(diff / 1000);
+                    let diffmin = Math.floor(diffsec / 60);
+                    let diffhour = Math.floor(diffmin / 60);
+                    diffsec = diffsec % 60;
+                    diffmin = diffmin % 60;
+                    let diffstr = diffhour.toString().padStart(2, "0") + ":" + diffmin.toString().padStart(2, "0") + ":" + diffsec.toString().padStart(2, "0");
+                    this.changeText("smn-time", diffstr);
+                }, 1000);
+            }
+        // When state is stop, stop the timer clear the timer interval and clear the this.trainingtimerstart to null
+        }else if(state == "stop"){
+            // Check if this.trainingtimerstart is null
+            if(this.trainingtimerstart == null){
+                this.consoleLog("Training timer is already stopped", "WARN");
+            }
+            else{
+                clearInterval(this.trainingtimer);
+                this.trainingtimerstart = null;
+                this.changeText("smn-time", "00:00:00");
+            }
+        }
+    }
+
+    handlePredictResults(data) {
+        // {
+        //     "result": null,
+        //     "percentage": null,
+        //     "other_result": null,
+        //     "other_percentage": null,
+        //     "uuid": null,
+        //     "image_data": null,
+        //     "numpy_array": null,
+        //     "classes": 11,
+        //     "class_names": [
+        //         "0",
+        //         "1",
+        //         "2",
+        //         "3",
+        //         "4",
+        //         "5",
+        //         "6",
+        //         "7",
+        //         "8",
+        //         "9",
+        //         "Star"
+        //     ]
+        // }
+        if (data != null && data != this.lastPredictResults) {
+            this.resultmane(data.result)
+            this.lastPredictResults = data;
+
+        }
+
+        if (this.correctPredictionButtonCreated == false) {
+            this.createCorrectPredictionButton(data.class_names)
+        }
+
     }
 
 }
