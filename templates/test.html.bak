@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Merged Page</title>
+    <style>
+        /* Code 1 Styles */
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .logEntry {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .stage {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .progressBarContainer {
+            width: 100%;
+            height: 20px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progressBar {
+            height: 100%;
+            background-color: #4CAF50;
+        }
+
+        .progressPercent {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .miniLogEntry {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .miniProgressBarContainer {
+            width: 40px;
+            height: 40px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .miniProgressBar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid #4CAF50;
+            position: relative;
+        }
+
+        .miniProgressBar::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: #4CAF50;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .miniStatus {
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .miniPercentage {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        /* Code 2 Styles */
+
+        #canvas {
+            border: 1px solid #000000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Log Viewer</h1>
+    <div id="logContainer"></div>
+
+    <div id="digitRecognitionTab">
+        <h1>Handwritten Digit Recognition</h1>
+        <canvas id="canvas" width="280" height="280"></canvas>
+        <br>
+        <button onclick="predict()">Predict</button>
+        <button onclick="resetCanvas()">Reset</button>
+        <br>
+        <input type="range" min="1" max="20" value="10" id="brushSizeSlider" onchange="changeBrushSize()">
+        <label for="brushSizeSlider">Brush Size</label>
+        <br>
+        <p id="prediction"></p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.3.0/fabric.min.js"></script>
+    <script>
+        // Code 1 JavaScript
+        window.onload = function() {
+            var logContainer = document.getElementById("logContainer");
+            var latestLogData = null;
+
+            var source = new EventSource("/api/sse/status");
+            source.onmessage = function(event) {
+                var logData = JSON.parse(event.data);
+                displayLogEntry(logData);
+            };
+
+            function displayLogEntry(logData) {
+                if (latestLogData !== null && logData.status === latestLogData.status) {
+                    return;  // Ignore duplicate log entries
+                }
+
+                if (latestLogData !== null) {
+                    var miniLogEntryElement = document.createElement("div");
+                    miniLogEntryElement.classList.add("miniLogEntry");
+
+                    var miniProgressBarContainer = document.createElement("div");
+                    miniProgressBarContainer.classList.add("miniProgressBarContainer");
+                    var miniProgressBar = document.createElement("div");
+                    miniProgressBar.classList.add("miniProgressBar");
+                    miniProgressBarContainer.appendChild(miniProgressBar);
+                    miniLogEntryElement.appendChild(miniProgressBarContainer);
+
+                    var stageElement = document.createElement("div");
+                    stageElement.classList.add("stage");
+                    stageElement.innerText = latestLogData.stage;
+                    miniLogEntryElement.appendChild(stageElement);
+
+                    var statusElement = document.createElement("div");
+                    statusElement.classList.add("miniStatus");
+                    statusElement.innerText = latestLogData.status;
+                    miniLogEntryElement.appendChild(statusElement);
+
+                    var percentageElement = document.createElement("div");
+                    percentageElement.classList.add("miniPercentage");
+                    percentageElement.innerText = latestLogData.percentage + "%";
+                    miniLogEntryElement.appendChild(percentageElement);
+
+                    logContainer.appendChild(miniLogEntryElement);
+                }
+
+                logContainer.innerHTML = ""; // Clear the log container
+
+                var logEntryElement = document.createElement("div");
+                logEntryElement.classList.add("logEntry");
+
+                var stageElement = document.createElement("div");
+                stageElement.classList.add("stage");
+                stageElement.innerText = logData.stage;
+                logEntryElement.appendChild(stageElement);
+
+                var progressBarContainer = document.createElement("div");
+                progressBarContainer.classList.add("progressBarContainer");
+                var progressBar = document.createElement("div");
+                progressBar.classList.add("progressBar");
+                progressBar.style.width = logData.percentage + "%";
+                progressBarContainer.appendChild(progressBar);
+                logEntryElement.appendChild(progressBarContainer);
+
+                var progressPercent = document.createElement("div");
+                progressPercent.classList.add("progressPercent");
+                progressPercent.innerText = logData.percentage + "%";
+                logEntryElement.appendChild(progressPercent);
+
+                var statusElement = document.createElement("div");
+                statusElement.classList.add("status");
+                statusElement.innerText = logData.status;
+                logEntryElement.appendChild(statusElement);
+
+                logContainer.insertBefore(logEntryElement, logContainer.firstChild);
+
+                latestLogData = logData;
+            }
+        };
+
+        // Code 2 JavaScript
+        var canvas = new fabric.Canvas('canvas');
+        // Canvas colr = black
+        canvas.backgroundColor = "#000000";
+        canvas.renderAll();
+
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.width = 10;
+        canvas.freeDrawingBrush.color = "white";
+
+        function predict() {
+            var dataURL = canvas.toDataURL();
+            var blob = dataURLtoBlob(dataURL);
+
+            var formData = new FormData();
+            formData.append('image', blob, 'image.png');
+
+            $.ajax({
+                type: "POST",
+                url: "/api/predict",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    $("#prediction").text("Prediction: " + response.prediction);
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
+        function resetCanvas() {
+            canvas.clear();
+            canvas.backgroundColor = "#000000";
+            canvas.renderAll();
+        }
+
+        function changeBrushSize() {
+            var sliderValue = document.getElementById("brushSizeSlider").value;
+            canvas.freeDrawingBrush.width = parseInt(sliderValue);
+        }
+
+        function dataURLtoBlob(dataURL) {
+            var parts = dataURL.split(';base64,');
+            var contentType = parts[0].split(':')[1];
+            var raw = window.atob(parts[1]);
+            var rawLength = raw.length;
+            var uInt8Array = new Uint8Array(rawLength);
+
+            for (var i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+
+            return new Blob([uInt8Array], { type: contentType });
+        }
+    </script>
+</body>
+</html>
