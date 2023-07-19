@@ -214,7 +214,7 @@ class AIManeUI {
 
     aimane_rtuc() {
         // send GET api to {server}/api/rtuc
-        fetch(this.serverURL + "/api/rtuc", {
+        fetch(this.serverURL + "/api/restouc", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -256,11 +256,23 @@ class AIManeUI {
         }).then((response) => {
             if (response.status == 200) {
                 this.consoleLog("Correct prediction to " + defclass + " request sent successfully", "SUCCESS");
+                // Hide rmn-teachbox
+                this.hideElement("rmn-teachbox");
+                // Change rmn-guess and rmn-number
+                this.changeText("rmn-guess", "Now corrected to");
+                // Mapping to this.predictresults.class_names[defclass]
+                let result = this.predictresults.class_names[defclass];
+                this.changeText("rmn-number", result);
             }
             else {
                 this.consoleLog("Correct prediction to " + defclass + " request sent failed", "ERROR");
             }
         });
+    }
+
+    aimane_wrong() {
+        //Show rmn-teachbox
+        this.showElement("rmn-teachbox");
     }
 
     setupDrawCanvas(){
@@ -346,7 +358,9 @@ class AIManeUI {
 
     resultmane(number = null) {
         if (number != null) {
-            if(this.getText("rmn-number") != number) { this.changeText("rmn-number", number);}
+            // Mapping to this.predictresults.class_names[number]
+            let result = this.predictresults.class_names[number];
+            if(this.getText("rmn-number") != result) { this.changeText("rmn-number", result);}
         }
         let guessText = [
             "I think it's a ",
