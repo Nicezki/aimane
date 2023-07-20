@@ -24,12 +24,14 @@ class AiMane:
     def __init__(self):
         self.training_config = {
             "use_gpu" : True,
-            "epochs": 25,
+            "epochs": 30,
             "stop_on_acc" : 1.00,
             # "batch_size": 60000,
             "validation_split": 0.2,
             "shuffle": True,
             "usercontent" : True,
+            "save_image" : True,
+            "save_model" : True,
             "classes" : 10,
             "class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             "uc_classes" : 11,
@@ -121,7 +123,7 @@ class AiMane:
 
         return self.prediction_result
     
-    def set_training_config(self, use_gpu=None, epochs=None, stop_on_acc=None, validation_split=None, shuffle=None, usercontent=None, classes=None, class_names=None, uc_classes=None, uc_class_names=None):
+    def set_training_config(self, use_gpu=None, epochs=None, stop_on_acc=None, save_image=None, save_model=None, validation_split=None, shuffle=None, usercontent=None, classes=None, class_names=None, uc_classes=None, uc_class_names=None):
         if use_gpu is not None:
             self.training_config["use_gpu"] = use_gpu
             self.sysmane.write_status("[CONFIG] Training Config: use_gpu is now set to " + str(use_gpu))
@@ -132,6 +134,12 @@ class AiMane:
         if stop_on_acc is not None:
             self.training_config["stop_on_acc"] = stop_on_acc
             self.sysmane.write_status("[CONFIG] Training Config: stop_on_acc is now set to " + str(stop_on_acc))
+        if save_image is not None:
+            self.training_config["save_image"] = save_image
+            self.sysmane.write_status("[CONFIG] Training Config: save_image is now set to " + str(save_image))
+        if save_model is not None:
+            self.training_config["save_model"] = save_model
+            self.sysmane.write_status("[CONFIG] Training Config: save_model is now set to " + str(save_model))
         if validation_split is not None:
             self.training_config["validation_split"] = validation_split
             self.sysmane.write_status("[CONFIG] Training Config: validation_split is now set to " + str(validation_split))
@@ -153,6 +161,16 @@ class AiMane:
         if uc_class_names is not None:
             self.training_config["uc_class_names"] = uc_class_names
             self.sysmane.write_status("[CONFIG] Training Config: uc_class_names is now set to " + str(uc_class_names))
+
+
+    def get_training_config (self, as_json=True):
+        tconf = self.training_config
+        if as_json:
+            tconf_string = json.dumps(tconf)
+            return tconf_string
+        else:
+            return tconf
+        
         
         # self.training_config = {
         #     "use_gpu" : True,
@@ -769,10 +787,21 @@ class AiMane:
         # prediction_list = [predictions[0]]
         other_result = []
         self.sysmane.write_status("Prediction is {} , other predictions are {}".format(predictions[0], predictions), stage="Prediction", percentage=0)
+
+        if not self.training_config["save_image"]:
+            self.sysmane.write_status("Image saving is disabled. Skipping image saving")
+            return predictions
         # Save the image to {storepath}/result/{prediction}--{uuid}.png
         os.makedirs("{}/result".format(self.store_path), exist_ok=True)
         # File name will determine by the image data to avoid duplicate dataset
         filename = hashlib.md5(image_data).hexdigest()
+        # Banned filename will be discarded
+        # Blank image is 61dce78ef88be2d672e96f83c403fd73
+        if filename == "61dce78ef88be2d672e96f83c403fd73":
+            self.sysmane.write_status("Blank Image Detected!! Discarding blank image")
+            return predictions
+        
+
         filepath = "{}/result/{}--{}.png".format(self.store_path, predictions[0], "uc_" + filename)
         self.save_image(image, filepath)
         self.running_config["last_prediction"] = predictions[0]
@@ -788,6 +817,12 @@ class AiMane:
         # Rename file in /result/{prediction}--{uuid}.png to /result/{new_prediction}--{uuid}.png
         # Check if the file exist
         if os.path.isfile("{}/result/{}--{}.png".format(self.store_path, prediction, uuid)):
+            # Check if rename name is already exist or not
+            if os.path.isfile("{}/result/{}--{}.png".format(self.store_path, new_prediction, uuid)):
+                self.sysmane.write_status("Prediction already exist", stage="Prediction", percentage=0)
+                # Remove the file
+                os.remove("{}/result/{}--{}.png".format(self.store_path, prediction, uuid))
+                return False
             os.rename("{}/result/{}--{}.png".format(self.store_path, prediction, uuid), "{}/result/{}--{}.png".format(self.store_path, new_prediction, uuid))
             self.sysmane.write_status("Prediction defined to {}".format(new_prediction), stage="Prediction", percentage=0)
             return True
@@ -796,6 +831,9 @@ class AiMane:
             return False
         
     def define_last_prediction(self, new_prediction):
+        if not self.training_config["save_image"]:
+            self.sysmane.write_status("Image saving is disabled. Cannot define prediction")
+            return False
         # Get last prediction and uuid from running_config
         prediction = self.running_config["last_prediction"]
         uuid = self.running_config["last_prediction_uuid"]
@@ -925,15 +963,10 @@ class VerboseCallback(Callback):
             #     percentage = ((batch + 1) / self.aimane.running_config["highest_batch"] * 100) 
             #     # Weight of 1 epoch to the total percentage
             #     percentage = percentage / 100 * (1 / self.aimane.training_config["epochs"])
-            percentage = (batch + 1) / 60000 * 100 
-            # Round down to 3 decimal places
-            rdpercentage = math.floor(percentage+ self.percentage)
-            # to 3 decimal places
-            rdpercentage = round(rdpercentage, 3)
-
-            percentage = self.percentage + percentage
-            
-            self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=rdpercentage)
+            percentage = percentage = (batch + 1) / 60000 * 100 
+            # Cut the zeros after 3 decimal places
+            percentage = "{:.3f}".format(percentage + self.percentage)
+            self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=percentage)
             # self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
             self.sysmane.set_train_status(status="Training model", stage="Training model on batch {}".format(batch + 1), percentage=percentage, epoch=None, batch=batch, loss=logs["loss"], acc=logs["accuracy"], finished=False, result="Not ready")
 
@@ -945,10 +978,9 @@ class VerboseCallback(Callback):
             print("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]))
             # Update percentage by Epoch / Total Epochs * 100
             self.percentage = (epoch + 1) / self.params["epochs"] * 100
-            percentage = self.percentage
-            rdpercentage = round(self.percentage, 3)
-            self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=rdpercentage)
-            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"], finished=False, result="Not ready")
+            percentage = "{:.3f}".format(self.percentage)
+            self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
+            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"])
             if self.aimane.training_config["stop_on_acc"] is not None and logs["accuracy"] >= self.aimane.training_config["stop_on_acc"] and self.model is not None:
                 self.model.stop_training = True
                 self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)

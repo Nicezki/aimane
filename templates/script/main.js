@@ -43,6 +43,17 @@ class AIManeUI {
                         "smn-loss" : document.querySelector(".smn-loss div h1"), //.textContent = "0%"
                         "smn-batch" : document.querySelector(".smn-batch div h1"), //.textContent = "0%
                         "smn-epoch" : document.querySelector(".smn-epoch div h1"), //.textContent = "1"
+                    "btn-configtrain" : document.querySelector(".btn-configtrain"), //Trigger click event
+                    "smn-training-config-box" : document.querySelector(".smn-training-config-box"), //.style.display = "Flex" or "None"
+
+                        "conf-cur-epoch" : document.querySelector(".conf-cur-epoch div h6"), //.textContent = "Current: 25"
+                        "form-field-epoch" : document.querySelector("#form-field-epoch"), // Text Field
+                        "conf-cur-uc" : document.querySelector(".conf-cur-uc div h6"), // .textContent = "Current: true"
+                        "form-field-uc" : document.querySelector("#form-field-uc"), // Dropdown
+                        "conf-cur-saveimg" : document.querySelector(".conf-cur-saveimg div h6"), // .textContent = "Current: true"
+                        "form-field-saveimg" : document.querySelector("#form-field-img"), // Dropdown
+                        "conf-cur-savemodel" : document.querySelector(".conf-cur-savemodel div h6"), // .textContent = "Current: true"
+                        "form-field-savemodel" : document.querySelector("#form-field-model"), // Dropdown
                 "resultmane" : document.querySelector(".resultmane"),
                     "rmn-icon" : document.querySelector(".rmn-icon div div div i"), //.className = "fas fa-atom"
                     "rmn-title" : document.querySelector(".rmn-title div h3"), //.textContent = "Prediction​"
@@ -74,6 +85,12 @@ class AIManeUI {
         };
         this.server_list = [
             {
+                "name": "Nicezki Home Server",
+                "address": "miri.network.nicezki.com",
+                "port": "5000",
+                "protocol": "https"
+            },
+            {
                 "name": "192.168.1.2:5000",
                 "address": "192.168.1.2",
                 "port": "5000",
@@ -98,6 +115,28 @@ class AIManeUI {
     hideElement(element_name) {
         this.ui_elements[element_name].style.display = "none";
     }
+
+    reshowElement(element_name) {
+        this.ui_elements[element_name].style.display = "none";
+        setTimeout(() => {
+            this.ui_elements[element_name].style.display = "Flex";
+        }, 100);
+    }
+
+    reshowElementByTime(element_name, time) {
+        this.ui_elements[element_name].style.display = "none";
+        setTimeout(() => {
+            this.ui_elements[element_name].style.display = "Flex";
+        }, time);
+    }
+
+    hideElementByTime(element_name, time) {
+        this.ui_elements[element_name].style.display = "Flex";
+        setTimeout(() => {
+            this.ui_elements[element_name].style.display = "none";
+        }, time);
+    }
+
 
     changeText(element_name, text) {
         this.ui_elements[element_name].textContent = text;
@@ -176,7 +215,116 @@ class AIManeUI {
         this.ui_elements["rmn-btn-wrong"].addEventListener("click", () => {
             this.aimane_wrong();
         });
+        this.ui_elements["btn-configtrain"].addEventListener("click", () => {
+            this.toggleTrainConfig();
+        });
+
+        this.ui_elements["form-field-epoch"].addEventListener("change", () => {
+            this.consoleLog("Epoch changed to " + this.ui_elements["form-field-epoch"].value);
+            this.setTrainConfig("epochs", this.ui_elements["form-field-epoch"].value);
+        });
+
+        this.ui_elements["form-field-uc"].addEventListener("change", () => {
+            this.consoleLog("UC changed to " + this.ui_elements["form-field-uc"].value);
+            this.setTrainConfig("uc", this.ui_elements["form-field-uc"].value);
+        });
+
+        this.ui_elements["form-field-saveimg"].addEventListener("change", () => {
+            this.consoleLog("Save image changed to " + this.ui_elements["form-field-saveimg"].value);
+            this.setTrainConfig("img", this.ui_elements["form-field-saveimg"].value);
+        });
+
+        this.ui_elements["form-field-savemodel"].addEventListener("change", () => {
+            this.consoleLog("Save model changed to " + this.ui_elements["form-field-savemodel"].value);
+            this.setTrainConfig("model", this.ui_elements["form-field-savemodel"].value);
+        });
+
     }
+
+    toggleTrainConfig() {
+        if (this.ui_elements["smn-training-config-box"].style.display == "none") {
+            this.ui_elements["smn-training-config-box"].style.display = "flex";
+        }
+        else {
+            this.ui_elements["smn-training-config-box"].style.display = "none";
+        }
+    }
+
+
+    getTrainConfig() {
+        // send GET api to {server}/api/setconfig
+        fetch(this.serverURL + "/api/setconfig", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                response.json().then((data) => {
+                    this.ui_elements["conf-cur-epoch"].textContent = "Current: " + data["epochs"];
+                    this.ui_elements["form-field-epoch"].value = data["epochs"];
+                    this.ui_elements["conf-cur-uc"].textContent = "Current: " + data["usercontent"];
+                    this.ui_elements["form-field-uc"].value = data["usercontent"];
+                    this.ui_elements["conf-cur-saveimg"].textContent = "Current: " + data["save_image"];
+                    this.ui_elements["form-field-saveimg"].value = data["save_image"];
+                    this.ui_elements["conf-cur-savemodel"].textContent = "Current: " + data["save_model"];
+                    this.ui_elements["form-field-savemodel"].value = data["save_model"];
+
+                    if (data["save_image"] == "false" ||  data["save_image"] == 0 || data["save_image"] == false) {
+                        this.hideElement("rmn-btn-wrong");
+                        this.hideElement("rmn-teachbox");
+                    }else{
+                        this.showElement("rmn-btn-wrong");
+                        }
+
+                });
+            }
+            else {
+                this.consoleLog("Get config request sent failed", "ERROR");
+            }
+        });
+    }
+
+
+    setTrainConfig(config,value) {
+        // send GET api to {server}/api/setconfig
+        fetch(this.serverURL + "/api/setconfig?"+config+"=" + value, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                response.json().then((data) => {
+                    this.ui_elements["conf-cur-epoch"].textContent = "Current: " + data["epochs"];
+                    this.ui_elements["form-field-epoch"].value = data["epochs"];
+                    this.ui_elements["conf-cur-uc"].textContent = "Current: " + data["usercontent"];
+                    this.ui_elements["form-field-uc"].value = data["usercontent"];
+                    this.ui_elements["conf-cur-saveimg"].textContent = "Current: " + data["save_image"];
+                    this.ui_elements["form-field-saveimg"].value = data["save_image"];
+                    // If saving image is disabled, disable the wrong button
+                    if (data["save_image"] == "false" ||  data["save_image"] == 0 || data["save_image"] == false) {
+                        this.hideElement("rmn-btn-wrong");
+                        this.hideElement("rmn-teachbox");
+                    }else{
+                        this.showElement("rmn-btn-wrong");
+                    }
+                    this.ui_elements["conf-cur-savemodel"].textContent = "Current: " + data["save_model"];
+                    this.ui_elements["form-field-savemodel"].value = data["save_model"];
+
+                    this.deleteAllEpochProgressBox();
+                    this.createEpochProgressBox(data["epochs"]);
+            });
+            }
+            else {
+                this.consoleLog("Set config request sent failed", "ERROR");
+            }
+        });
+    }
+
+                    
+
+            
 
     aimane_prepare() {
         // send GET api to {server}/api/prepare
@@ -272,7 +420,7 @@ class AIManeUI {
 
     aimane_wrong() {
         //Show rmn-teachbox
-        this.showElement("rmn-teachbox");
+        this.hideElementByTime("rmn-teachbox",5000);
     }
 
     setupDrawCanvas(){
@@ -365,14 +513,36 @@ class AIManeUI {
         let guessText = [
             "I think it's a ",
             "Hmm, I think it's a ",
-            "Wow it's a ",
+            "Wow, it's a ",
             "Let me guess, it's a ",
             "From my experience, it's a ",
             "I'm pretty sure it's a ",
             "I'm guessing it's a ",
             "Maybe it's a ",
-            "I think today lotto is"
+            "I think today's lotto is",
+            "Nailed it! It's obviously a ",
+            "No doubt about it, it's a ",
+            "I've got this: It's a ",
+            "Piece of cake! It's a ",
+            "Oh, it's definitely a ",
+            "Watch and learn, it's a ",
+            "Easy peasy, it's a ",
+            "My intuition says it's a ",
+            "Locking it in: It's a ",
+            "Voila! It's a ",
+            "Hold your applause, it's a ",
+            "This one's a no-brainer: It's a ",
+            "Tada! It's a ",
+            "I spy with my little eye, it's a ",
+            "There you have it, it's a ",
+            "Eureka! It's a ",
+            "Count on me, it's a ",
+            "Magic eight ball says it's a ",
+            "It's written in the stars, it's a ",
+            "Confidently stating, it's a ",
+            "Cross my heart, it's a "
         ]
+
         let guess = guessText[Math.floor(Math.random() * guessText.length)];
         if(this.getText("rmn-guess") != guess) { this.changeText("rmn-guess", guess);}
 
@@ -383,6 +553,36 @@ class AIManeUI {
             "I'm wrong?",
             "Oh, I'm wrong?",
             "Teach me!!",
+            "Teach me if I'm mistaken",
+            "I stand corrected, please teach me",
+            "Educate me if I err",
+            "Help me learn if I'm off track",
+            "Oh, my bad. Teach me!",
+            "Show me the right path if I'm wrong",
+            "I'm open to learning, correct me",
+            "If I misspoke, please teach me",
+            "In case I'm mistaken, teach me",
+            "I welcome corrections, teach me",
+            "I'm all ears, show me the right way",
+            "If there's an error, teach me",
+            "I'm a student, please correct me",
+            "Point out my mistakes and teach me",
+            "I'm still growing, educate me",
+            "Don't hesitate to correct me",
+            "I'm here to learn, show me",
+            "Please guide me if I'm wrong",
+            "Correct me if I'm mistaken",
+            "I'm humble enough to learn, teach me",
+            "Open to corrections, show me",
+            "Teach me if I miss the mark",
+            "I appreciate feedback, correct me",
+            "If I'm mistaken, please teach me",
+            "I'm learning, guide me",
+            "If I'm off-base, teach me",
+            "I'm willing to learn, show me",
+            "I'm not perfect, correct me",
+            "Please point out my errors and teach me",
+            "I seek knowledge, educate me"
         ]
         let teach = teachText[Math.floor(Math.random() * teachText.length)];
         if(this.getText("rmn-teachtext") != teach) { this.changeText("rmn-teachtext", teach);}
@@ -396,6 +596,33 @@ class AIManeUI {
             "Write your number here",
             "Give me your number",
             "It's lotto time",
+            "Your turn to jot down the number",
+            "Put your number on paper",
+            "Time to pen your number",
+            "Let's see your written number",
+            "Ink your chosen number",
+            "Go ahead, write the number",
+            "Waiting for your written number",
+            "The stage is yours, write the number",
+            "Write down your lucky number",
+            "Write it up, your number is up",
+            "Let's get your number on record",
+            "Time to scribble your number",
+            "Ready, set, write your number",
+            "Don't be shy, write your number",
+            "We need your written number",
+            "Give us your number in writing",
+            "Writing time, your number please",
+            "Numbers on paper, write yours",
+            "I'm all ears for your written number",
+            "Write it in bold, your number",
+            "Write your number boldly",
+            "Waiting for your number on paper",
+            "Your number, your writing",
+            "It's showtime, write your number",
+            "The moment has come, write your number",
+            "Write your winning number",
+            "Inscribe your number here"
         ]
         let tryy = tryText[Math.floor(Math.random() * tryText.length)];
         if(this.getText("rmn-trytext") != tryy) { this.changeText("rmn-trytext", tryy);}
@@ -655,6 +882,7 @@ class AIManeUI {
         this.source.onopen = (e) => {
             console.log("[INFO] SSE connected to " + sse_url);
             this.connected = true;
+            this.getTrainConfig();
         };
         this.source.onerror = (e) => {
             console.log("[ERROR] SSE connection error");

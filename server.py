@@ -265,7 +265,55 @@ def definepredict2():
     else:
         return "Define prediction failed because label or image is not provided or not correct!"
     
+
+# Set training config
+# Route will be /api/setconfig?epochs=xxx&uc=xxx&img=xxx&model=xxx
+# epochs: number of epochs
+# uc: User Content
+# img: Image saving
+# model: Model saving
+# No need to have all parameters
+@app.route('/api/setconfig', methods=['GET'])
+def setconfig():
+    if request.args.get('epochs') != None:
+        epochs = request.args.get('epochs')
+        if epochs != None and epochs != "" and epochs.isdigit() and int(epochs) > 0:
+            epochs = int(epochs)
+            aimane.set_training_config(epochs=epochs)
+    if request.args.get('uc') != None:
+        uc = request.args.get('uc')
+        if uc == "true" or uc == "True" or uc == "1":
+            uc = True
+        elif uc == "false" or uc == "False" or uc == "0":
+            uc = False
+        aimane.set_training_config(usercontent=uc)
+    if request.args.get('img') != None:
+        img = request.args.get('img')
+        if img == "true" or img == "True" or img == "1":
+            img = True
+        elif img == "false" or img == "False" or img == "0":
+            img = False
+        aimane.set_training_config(save_image=img)
+    if request.args.get('model') != None:
+        model = request.args.get('model')
+        if model == "true" or model == "True" or model == "1":
+            model = True
+        elif model == "false" or model == "False" or model == "0":
+            model = False
+        aimane.set_training_config(save_model=model)
+    return aimane.get_training_config()
+
+
+
     
+
+
+    
+    
+
+
+
+
 
 
 
@@ -317,8 +365,11 @@ if __name__ == '__main__':
     # Run as production server
     aimane.sysmane.write_status("Server is started")
     # ssl at /app/ssl/rootCA-key.pem and /app/ssl/rootCA.pem
-    
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/local.pem', 'app/ssl/local-key.pem'))
+    # Run at 2 host:
+    # 1. localhost:5000
+    #app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/local.pem', 'app/ssl/local-key.pem'))
+    # 2.miri.network.nicezki.com:5000
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/site-cert.pem', 'app/ssl/site-key.pem'))
     
 
 
