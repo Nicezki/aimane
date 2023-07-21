@@ -608,8 +608,8 @@ class AiMane:
     
     def train(self):
         self.sysmane.write_status("Training model starting...", stage="Training model", percentage=0)
-        # Check if the dataset is prepared.
-        if not os.path.exists(self.dataset_path):
+        # Check if the dataset is prepared and have dataset in it. check if count.txt exists inside the dataset pa
+        if not os.path.exists(self.dataset_path or not os.path.exists("{}/dataset".format(self.dataset_path or not os.path.exists("{}/count.txt".format(self.dataset_path))))):
             self.sysmane.write_status("[ERROR] Dataset is not prepared.")
             return "Dataset is not prepared."
         else:
@@ -912,6 +912,12 @@ class AiMane:
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def write_model_acc(self, acc):
+        # Check if {storepath}/model/acc.txt exists
+        if not os.path.exists("{}/model/acc.txt".format(self.store_path)):
+            # Create {storepath}/model/acc.txt
+            os.makedirs("{}/model".format(self.store_path), exist_ok=True)
+            open("{}/model/acc.txt".format(self.store_path), "w").close()
+            self.sysmane.write_status("Created {}/model/acc.txt".format(self.store_path))
         # Replace the acc.txt file with new acc
         filename = "{}/model/acc.txt".format(self.store_path)
         with open(filename, "w") as f:
