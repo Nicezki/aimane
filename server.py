@@ -1,13 +1,14 @@
 import time
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_from_directory
 from app import aimane
 from flask import request, render_template
 from flask_cors import CORS, cross_origin
+from waitress import serve
 
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
-# Set the allowed origins in a list
+# Set the allowed origins in a list Now not used
 # allowed_origins = [
 #     'https://me.nicezki.com/',
 #     'https://nicezki.com/',
@@ -324,12 +325,6 @@ def rewrite_filename():
 
 
 
-# @app.route('/api/predict-lab', methods=['GET'])
-# # Same as predict but user provide the label also to check if the prediction is correct
-# def predict_lab():
-
-
-
 @app.route('/predict', methods=['GET'])
 def predict_page():
     return render_template('predict.html')
@@ -354,23 +349,57 @@ def script():
 
 
 
+
+# for /app/v1
+# New AIMANE app for production
+
+# for /app/v0
+# Old just for testing purpose app before v1 was created
+# The purpose of this app is to test the api path and see if it works
+
+@app.route('/app/<path:path>')
+def appv0(path):
+    return send_from_directory('app/frontend', path)
+
+
+
 # # Initialize the app
 # if __name__ == '__main__':
 #     app.run(debug=True)
 
 
 if __name__ == '__main__':
-    # Run as local server with debug mode on
-    #app.run(debug=True, use_reloader=False)
     # Run as production server
     aimane.sysmane.write_status("Server is started")
-    # ssl at /app/ssl/rootCA-key.pem and /app/ssl/rootCA.pem
-    # Run at 2 host:
-    # 1. localhost:5000
-    #app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/local.pem', 'app/ssl/local-key.pem'))
-    # 2.miri.network.nicezki.com:5000
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/site-cert.pem', 'app/ssl/site-key.pem'))
+
+    ####### FOR DEV ########
+
+    # FOR DEV WITHOUT SSL 
+    # Professors can use this also If you want to see and debug the code
+
+    # app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+
+
+
+    # FOR DEV WITH SSL
+    # Professors can not use this without the valid SSL certificate
+    # Professors need to have SSL and put ssl files in app/ssl folder
+    # Professors can generate SSL certificate using openssl or use certbot to get free SSL certificate
+
+    #app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/site-cert.pem', 'app/ssl/site-key.pem'))
     
+
+
+
+    ####### FOR PRODUCTION ########
+
+    # FOR PRODUCTION WITHOUT SSL 
+    # This is the default setting for production
+    # Professors, please use this
+    # This will use waitress as the production server instead of flask
+
+    
+    serve(app, host='0.0.0.0', port=5000)
 
 
 

@@ -1,8 +1,6 @@
 import datetime
 import hashlib
 import json
-import math
-import random
 import uuid
 import cv2
 import os
@@ -667,7 +665,7 @@ class AiMane:
         model = tf.keras.models.Sequential()
         model.add(Conv2D(64, (3, 3), activation="relu", input_shape=(28, 28, 1))) # Add a convolutional layer with 64 filters, a kernel size of 3x3, and relu activation
         model.add(MaxPooling2D((2, 2)))
-        model.add(Flatten())
+        model.add(Flatten()) # Add a flattening layer to convert the features to a single 1D array  
         model.add(Dense(classes, activation="softmax"))
     
         model.compile(loss=tf.keras.losses.categorical_crossentropy, optimizer=tf.keras.optimizers.Adam(), metrics=["accuracy"])
