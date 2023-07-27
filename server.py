@@ -369,9 +369,6 @@ def appv0(path):
 
 
 if __name__ == '__main__':
-    # Run as production server
-    aimane.sysmane.write_status("Server is started")
-
     ####### FOR DEV ########
 
     # FOR DEV WITHOUT SSL 
@@ -399,6 +396,11 @@ if __name__ == '__main__':
     # This will use waitress as the production server instead of flask
 
     
+    aimane.sysmane.write_status("Use http://localhost:5000/app/v1/index.html to access the app version 1",, nowrite=True)
+    aimane.sysmane.write_status("Use http://localhost:5000/app/v0/index.html to access the app version prototype", nowrite=True)
+    aimane.sysmane.write_status("Use http://localhost:5000/api/<path> to access the api", nowrite=True)
+    aimane.sysmane.write_status("Use http://localhost:5000/api/sse/<path> to access the Server sent event api", nowrite=True)
+    aimane.sysmane.write_status("Server is started")
     serve(app, host='0.0.0.0', port=5000)
 
 
