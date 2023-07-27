@@ -10,6 +10,16 @@ python -c "import sys; exit(1 if sys.version_info < (3, 10) else 0)" || (
 )
 
 echo: Good!!, you have Python 3.10.x or newer
+
+rem If 3.10.x use requirements.txt
+rem If 3.11.x or newer use requirements_3_11.txt
+python -c "import sys; exit(1 if sys.version_info < (3, 11) else 0)" && (
+    echo: Detected Python 3.11.x or newer, using requirements_3_11.txt
+    set requirements=requirements_3_11.txt
+) || (
+    echo: Detected Python 3.10.x, using requirements.txt
+    set requirements=requirements.txt
+)
    
 
 
@@ -22,7 +32,7 @@ if not exist venv (
     echo: Activating virtual environment...
     call venv\Scripts\activate
     echo: Installing requirements...
-    call pip install -r requirements.txt
+    call pip install -r %requirements%
     echo: Installed requirements
 )
 if exist venv (
