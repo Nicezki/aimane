@@ -1,7 +1,7 @@
 colorama
 Flask
 Flask_Cors
-keras
+keras==2.12.0
 numpy
 opencv_python
 Pillow
