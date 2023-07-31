@@ -33,7 +33,7 @@ if "%1"=="" (
     
     rem If 3.10.x use requirements.txt
     rem If 3.11.x or newer use requirements_3_11.txt
-    echo %python_text%
+    echo: %python_text%
 
     
     rem If venv directory doesn't exist
