@@ -1,8 +1,6 @@
 import datetime
 import hashlib
 import json
-import math
-import random
 import uuid
 import cv2
 import os
@@ -667,7 +665,7 @@ class AiMane:
         model = tf.keras.models.Sequential()
         model.add(Conv2D(64, (3, 3), activation="relu", input_shape=(28, 28, 1))) # Add a convolutional layer with 64 filters, a kernel size of 3x3, and relu activation
         model.add(MaxPooling2D((2, 2)))
-        model.add(Flatten())
+        model.add(Flatten()) # Add a flattening layer to convert the features to a single 1D array  
         model.add(Dense(classes, activation="softmax"))
     
         model.compile(loss=tf.keras.losses.categorical_crossentropy, optimizer=tf.keras.optimizers.Adam(), metrics=["accuracy"])
@@ -680,31 +678,33 @@ class AiMane:
         # Start training
         model.fit(train_images, train_labels, epochs=self.training_config["epochs"], callbacks=callbacks)
     
-        os.makedirs("{}/model".format(self.store_path), exist_ok=True)
-        current_model_acc = self.get_model_acc()
-        self.sysmane.write_status("Current model accuracy: {}".format(current_model_acc))
+        if self.training_config["save_model"]:
+            os.makedirs("{}/model".format(self.store_path), exist_ok=True)
+            current_model_acc = self.get_model_acc()
+            self.sysmane.write_status("Current model accuracy: {}".format(current_model_acc))
+
+            # Check if the current model accuracy is lower than last model accuracy
+            if isinstance(self.last_model_acc, int) and isinstance(current_model_acc, int) and self.last_model_acc > current_model_acc:
+                self.sysmane.write_status("Last model accuracy is higher than current model accuracy. Discarding current model.")
+                # Rename the model file to model_discarded_{accuracy}.h5
+                model.save("{}/model/model_discarded_{}.h5".format(self.store_path, current_model_acc))
+                #Rename back the last model file to model.h5
+                os.rename("{}/model/model_{}.h5".format(self.store_path, self.last_model_acc), "{}/model/model.h5".format(self.store_path))
+            else:
+                self.sysmane.write_status("Current model accuracy is higher than last model accuracy. Saving current model.")
+                # Save the model
+                model.save("{}/model/model.h5".format(self.store_path))
+                self.sysmane.write_status("Model saved at path: {}/model".format(self.store_path))
+                self.sysmane.write_status("Training model finished with accuracy: {}".format(current_model_acc))
+
+        else:
+            self.sysmane.write_status("Training model finished without saving model because save_model is set to False.")
+
+
         # Give back VRAM to the system
         if self.training_config["use_gpu"]:
             tf.keras.backend.clear_session()
             self.sysmane.write_status("GPU options are enabled. Try to give back VRAM to the system.")
-
-
-        # Check if the current model accuracy is lower than last model accuracy
-        if isinstance(self.last_model_acc, int) and isinstance(current_model_acc, int) and self.last_model_acc > current_model_acc:
-            self.sysmane.write_status("Last model accuracy is higher than current model accuracy. Discarding current model.")
-            # Rename the model file to model_discarded_{accuracy}.h5
-            model.save("{}/model/model_discarded_{}.h5".format(self.store_path, current_model_acc))
-            #Rename back the last model file to model.h5
-            os.rename("{}/model/model_{}.h5".format(self.store_path, self.last_model_acc), "{}/model/model.h5".format(self.store_path))
-        else:
-            self.sysmane.write_status("Current model accuracy is higher than last model accuracy. Saving current model.")
-            # Save the model
-            model.save("{}/model/model.h5".format(self.store_path))
-            self.sysmane.write_status("Model saved at path: {}/model".format(self.store_path))
-            self.sysmane.write_status("Training model finished with accuracy: {}".format(current_model_acc))
-        
-        # self.sysmane.write_status("Model saved at path: {}/model/{}".format(self.store_path, self.model_name))
-        # self.sysmane.write_status("Training model finished", stage="Training model", percentage=100)
     
 
     def test_model(self, test_images, test_labels):

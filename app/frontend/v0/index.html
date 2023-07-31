@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Merged Page</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* CSS Styles */
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logEntry {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .stage {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .progressBarContainer {
+            width: 100%;
+            height: 20px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progressBar {
+            height: 100%;
+            background-color: #4CAF50;
+        }
+
+        .progressPercent {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .miniLogEntry {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .miniProgressBarContainer {
+            width: 40px;
+            height: 40px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .miniProgressBar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid #4CAF50;
+            position: relative;
+        }
+
+        .miniProgressBar::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: #4CAF50;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .miniStatus {
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .miniPercentage {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Log Viewer</h1>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div id="logContainer"></div>
+            </div>
+            <div class="col-md-4">
+                <div class="btn-group mb-3">
+                    <button class="btn btn-primary" onclick="prepare()">Prepare</button>
+                    <button class="btn btn-primary" onclick="repair()">Repair</button>
+                    <button class="btn btn-primary" onclick="resourceToUserContent()">REtoUC</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="train()">Train</button>
+                    <button class="btn btn-primary" onclick="predict()">Predict</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="digitRecognitionTab">
+            <h1>Handwritten Digit Recognition</h1>
+            <canvas id="canvas" width="280" height="280"></canvas>
+            <h1 id="prediction"></h1>
+            <br>
+            <button class="btn btn-primary" onclick="predict()">Predict</button>
+            <button class="btn btn-primary" onclick="resetCanvas()">Reset</button>
+            <br>
+            <input type="range" min="1" max="20" value="10" id="brushSizeSlider" onchange="changeBrushSize()">
+            <label for="brushSizeSlider">Brush Size</label>
+            <br>
+            <div id="numberButtons">
+                <button class="btn btn-primary" onclick="defineLastPredict(0)">0</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(1)">1</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(2)">2</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(3)">3</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(4)">4</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(5)">5</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(6)">6</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(7)">7</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(8)">8</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(9)">9</button>
+                <button class="btn btn-primary" onclick="defineLastPredict(10)">STAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.3.0/fabric.min.js"></script>
+    <script>
+        // Code 1 JavaScript
+        window.onload = function() {
+            var logContainer = document.getElementById("logContainer");
+            var latestLogData = null;
+
+            var source = new EventSource("/api/sse/status");
+            source.onmessage = function(event) {
+                var logData = JSON.parse(event.data);
+                displayLogEntry(logData);
+            };
+
+            function displayLogEntry(logData) {
+                if (latestLogData !== null && logData.status === latestLogData.status) {
+                    return;  // Ignore duplicate log entries
+                }
+
+                if (latestLogData !== null) {
+                    var miniLogEntryElement = document.createElement("div");
+                    miniLogEntryElement.classList.add("miniLogEntry");
+
+                    var miniProgressBarContainer = document.createElement("div");
+                    miniProgressBarContainer.classList.add("miniProgressBarContainer");
+                    var miniProgressBar = document.createElement("div");
+                    miniProgressBar.classList.add("miniProgressBar");
+                    miniProgressBarContainer.appendChild(miniProgressBar);
+                    miniLogEntryElement.appendChild(miniProgressBarContainer);
+
+                    var stageElement = document.createElement("div");
+                    stageElement.classList.add("stage");
+                    stageElement.innerText = latestLogData.stage;
+                    miniLogEntryElement.appendChild(stageElement);
+
+                    var statusElement = document.createElement("div");
+                    statusElement.classList.add("miniStatus");
+                    statusElement.innerText = latestLogData.status;
+                    miniLogEntryElement.appendChild(statusElement);
+
+                    var percentageElement = document.createElement("div");
+                    percentageElement.classList.add("miniPercentage");
+                    percentageElement.innerText = latestLogData.percentage + "%";
+                    miniLogEntryElement.appendChild(percentageElement);
+
+                    logContainer.appendChild(miniLogEntryElement);
+                }
+
+                logContainer.innerHTML = ""; // Clear the log container
+
+                var logEntryElement = document.createElement("div");
+                logEntryElement.classList.add("logEntry");
+
+                var stageElement = document.createElement("div");
+                stageElement.classList.add("stage");
+                stageElement.innerText = logData.stage;
+                logEntryElement.appendChild(stageElement);
+
+                var progressBarContainer = document.createElement("div");
+                progressBarContainer.classList.add("progressBarContainer");
+                var progressBar = document.createElement("div");
+                progressBar.classList.add("progressBar");
+                progressBar.style.width = logData.percentage + "%";
+                progressBarContainer.appendChild(progressBar);
+                logEntryElement.appendChild(progressBarContainer);
+
+                var progressPercent = document.createElement("div");
+                progressPercent.classList.add("progressPercent");
+                progressPercent.innerText = logData.percentage + "%";
+                logEntryElement.appendChild(progressPercent);
+
+                var statusElement = document.createElement("div");
+                statusElement.classList.add("status");
+                statusElement.innerText = logData.status;
+                logEntryElement.appendChild(statusElement);
+
+                logContainer.insertBefore(logEntryElement, logContainer.firstChild);
+
+                latestLogData = logData;
+            }
+        };
+
+        // Code 2 JavaScript
+        var canvas = new fabric.Canvas('canvas');
+        // Canvas colr = black
+        canvas.backgroundColor = "#000000";
+        canvas.renderAll();
+
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.width = 10;
+        canvas.freeDrawingBrush.color = "white";
+
+        function predict() {
+            var dataURL = canvas.toDataURL();
+            var blob = dataURLtoBlob(dataURL);
+
+            var formData = new FormData();
+            formData.append('image', blob, 'image.png');
+
+            $.ajax({
+                type: "POST",
+                url: "/api/predict",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    prediction = response[0]
+                    // Prediction Mappping
+                    prediction_label = {
+                        0: "0",
+                        1: "1",
+                        2: "2",
+                        3: "3",
+                        4: "4",
+                        5: "5",
+                        6: "6",
+                        7: "7",
+                        8: "8",
+                        9: "9",
+                        10: "⭐"
+                    }
+                    prediction = prediction_label[prediction]
+                    $("#prediction").text("Prediction: " + prediction);
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
+
+        // get to /api/restouc
+        function resourceToUserContent()
+        {
+            $.ajax({
+                type: "GET",
+                url: "/api/restouc",
+                success: function(response) {
+                    // $("#prediction").text("Prediction: " + response.prediction);
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
+        function resetCanvas() {
+            canvas.clear();
+            canvas.backgroundColor = "#000000";
+            canvas.renderAll();
+        }
+
+        function changeBrushSize() {
+            var sliderValue = document.getElementById("brushSizeSlider").value;
+            canvas.freeDrawingBrush.width = parseInt(sliderValue);
+        }
+
+        function dataURLtoBlob(dataURL) {
+            var parts = dataURL.split(';base64,');
+            var contentType = parts[0].split(':')[1];
+            var raw = window.atob(parts[1]);
+            var rawLength = raw.length;
+            var uInt8Array = new Uint8Array(rawLength);
+
+            for (var i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+
+            return new Blob([uInt8Array], { type: contentType });
+        }
+
+        function prepare() {
+            $.ajax({
+                type: "GET",
+                url: "/api/prepare",
+                success: function() {
+                    console.log("Prepare request sent.");
+                },
+                error: function(xhr, status, error) {
+                    console.log("Prepare request failed:", xhr.responseText);
+                }
+            });
+        }
+
+        function repair() {
+            $.ajax({
+                type: "GET",
+                url: "/api/repairdataset",
+                success: function() {
+                    console.log("Repair request sent.");
+                },
+                error: function(xhr, status, error) {
+                    console.log("Repair request failed:", xhr.responseText);
+                }
+            });
+        }
+
+        function train() {
+            $.ajax({
+                type: "GET",
+                url: "/api/train",
+                success: function() {
+                    console.log("Train request sent.");
+                },
+                error: function(xhr, status, error) {
+                    console.log("Train request failed:", xhr.responseText);
+                }
+            });
+        }
+
+        function predict() {
+            var dataURL = canvas.toDataURL();
+            var blob = dataURLtoBlob(dataURL);
+
+            var formData = new FormData();
+            formData.append('image', blob, 'image.png');
+
+            $.ajax({
+                type: "POST",
+                url: "/api/predict",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    prediction = response[0]
+                    // Prediction Mappping
+                    prediction_label = {
+                        0: "0",
+                        1: "1",
+                        2: "2",
+                        3: "3",
+                        4: "4",
+                        5: "5",
+                        6: "6",
+                        7: "7",
+                        8: "8",
+                        9: "9",
+                        10: "⭐"
+                    }
+                    prediction = prediction_label[prediction]
+                    $("#prediction").text("Prediction: " + prediction);
+                },
+                error: function(xhr, status, error) {
+                    console.log("Prediction request failed:", xhr.responseText);
+                }
+            });
+        }
+
+        
+        function defineLastPredict(label) {
+        $.ajax({
+            type: "GET",
+            url: "/api/definelastpredict",
+            data: { label: label },
+            success: function() {
+                console.log("API call successful.");
+            },
+            error: function(xhr, status, error) {
+                console.log("API call failed:", xhr.responseText);
+            }
+        });
+        }
+    </script>
+</body>
+</html>

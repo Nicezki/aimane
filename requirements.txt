@@ -1,0 +1,9 @@
+colorama==0.4.6
+Flask==2.3.2
+Flask_Cors==4.0.0
+keras==2.10.0
+numpy==1.23.5
+opencv_python==4.7.0.72
+Pillow==10.0.0
+tensorflow<2.11
+waitress==2.1.2
