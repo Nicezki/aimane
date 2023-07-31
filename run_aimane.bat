@@ -6,6 +6,17 @@ SET "YELLOW=%ESC_CHAR%[93m"
 SET "RED=%ESC_CHAR%[91m"
 SET "NC=%ESC_CHAR%[0m"
 
+
+call python -c "import sys; exit(1 if sys.version_info < (3, 11) else 0)" && (
+    set requirements=requirements_3_11.txt
+    set python_text = Detected Python 3.11.x or newer, using requirements_3_11.txt
+) || (
+    set requirements=requirements.txt
+    set python_text = Detected Python 3.10.x, using requirements.txt
+)
+
+
+
 if "%1"=="" (
     
     
@@ -22,15 +33,8 @@ if "%1"=="" (
     
     rem If 3.10.x use requirements.txt
     rem If 3.11.x or newer use requirements_3_11.txt
-    python -c "import sys; exit(1 if sys.version_info < (3, 11) else 0)" && (
-        echo: Detected Python 3.11.x or newer, using requirements_3_11.txt
-        set requirements=requirements_3_11.txt
-    ) || (
-        echo: Detected Python 3.10.x, using requirements.txt
-        set requirements=requirements.txt
-    )
-       
-    
+    echo %python_text%
+
     
     rem If venv directory doesn't exist
     if not exist venv (
