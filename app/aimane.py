@@ -32,8 +32,8 @@ class AiMane:
             "save_model" : True,
             "classes" : 10,
             "class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            "uc_classes" : 11,
-            "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star"],
+            "uc_classes" : 12,
+            "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star","Heart"],
         }
         self.model_name = "model.h5"
         self.sysmane = SysMane.SysMane()
@@ -45,6 +45,7 @@ class AiMane:
         self.model_trained = False
         self.last_model_acc = 0
         self.running_config = {
+            "usercontent_valid" : False,
             "train_count" : [],
             "validate_count" : [],
             "last_prediction" : [],
@@ -65,7 +66,17 @@ class AiMane:
 
         self.sysmane.set_train_status(total_epoch=self.training_config["epochs"])
         # self.training_config["class_names"] combined with self.training_config["classes"] (merged skip duplicate)
-        if(self.training_config["usercontent"]):
+
+        # Check if usercontent folder exists and has files
+        if os.path.isdir(self.store_path + "/uc") and len(os.listdir(self.store_path + "/uc")) > 0:
+            self.sysmane.write_status("[CONFIG] Found usercontent folder with files",nowrite=True)
+            self.running_config["usercontent_valid"] = True
+        else:
+            self.sysmane.write_status("[CONFIG] No usercontent folder found or empty, Usercontent will be ignored")
+            self.running_config["usercontent_valid"] = False
+
+
+        if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
             self.prediction_result["class_names"] = self.training_config["uc_class_names"]
             self.prediction_result["classes"] = self.training_config["uc_classes"]
         else:
@@ -546,19 +557,22 @@ class AiMane:
         if self.training_config["usercontent"]:
             #Check if the usercontent dataset exists.
             if not os.path.exists("{}/uc".format(self.store_path)):
-                self.sysmane.write_status("[ERROR] Usercontent dataset does not exist.")
-                return "Usercontent dataset does not exist."
+                self.sysmane.write_status("[WARNING!] Usercontent dataset does not exist, Fall back to training dataset only.")
+                self.training_config["classes"] = 10
+                self.training_config["class_names"] = ["0","1","2","3","4","5","6","7","8","9"]
+                self.running_config["usercontent_valid"] = False
             # Load the usercontent dataset.
-            usercontent_images, usercontent_labels = self.load_mnist("{}/uc".format(self.store_path), usercontent=True)
-            if usercontent_images is not None and usercontent_labels is not None and train_images is not None and train_labels is not None:
-                # Concatenate the usercontent dataset to the training dataset.
-                train_images = np.concatenate((train_images, usercontent_images))
-                train_labels = np.concatenate((train_labels, usercontent_labels))
-                # Count the number of usercontent images.
-                usercontent_count = usercontent_images.shape[0]
-                self.sysmane.write_status("Usercontent dataset is loaded. {} images are loaded.".format(usercontent_count))
-            else:
-                self.sysmane.write_status("[WARNING!] Usercontent dataset is not loaded or training dataset is not loaded.")
+            if self.running_config["usercontent_valid"]:
+                usercontent_images, usercontent_labels = self.load_mnist("{}/uc".format(self.store_path), usercontent=True)
+                if usercontent_images is not None and usercontent_labels is not None and train_images is not None and train_labels is not None:
+                    # Concatenate the usercontent dataset to the training dataset.
+                    train_images = np.concatenate((train_images, usercontent_images))
+                    train_labels = np.concatenate((train_labels, usercontent_labels))
+                    # Count the number of usercontent images.
+                    usercontent_count = usercontent_images.shape[0]
+                    self.sysmane.write_status("Usercontent dataset is loaded. {} images are loaded.".format(usercontent_count))
+                else:
+                    self.sysmane.write_status("[WARNING!] Usercontent dataset is not loaded or training dataset is not loaded.")
         else:
             self.sysmane.write_status("[WARNING!] Usercontent dataset is not loaded.")
 
@@ -677,6 +691,12 @@ class AiMane:
     
         # Start training
         model.fit(train_images, train_labels, epochs=self.training_config["epochs"], callbacks=callbacks)
+
+
+        # Give back VRAM to the system
+        if self.training_config["use_gpu"]:
+            tf.keras.backend.clear_session()
+            self.sysmane.write_status("GPU options are enabled. Try to give back VRAM to the system.")
     
         if self.training_config["save_model"]:
             os.makedirs("{}/model".format(self.store_path), exist_ok=True)
@@ -698,14 +718,9 @@ class AiMane:
                 self.sysmane.write_status("Training model finished with accuracy: {}".format(current_model_acc))
 
         else:
-            self.sysmane.write_status("Training model finished without saving model because save_model is set to False.")
+            self.sysmane.write_status("Training model finished without saving model because save_model is set to False, Finished with accuracy: {}".format(self.get_model_acc()))
 
 
-        # Give back VRAM to the system
-        if self.training_config["use_gpu"]:
-            tf.keras.backend.clear_session()
-            self.sysmane.write_status("GPU options are enabled. Try to give back VRAM to the system.")
-    
 
     def test_model(self, test_images, test_labels):
         self.sysmane.write_status("Testing model", stage="Testing model", percentage=0)
@@ -987,7 +1002,7 @@ class VerboseCallback(Callback):
             percentage = "{:.3f}".format(self.percentage)
             self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
             self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"])
-            if self.aimane.training_config["stop_on_acc"] is not None and logs["accuracy"] >= self.aimane.training_config["stop_on_acc"] and self.model is not None:
+            if self.aimane.training_config["stop_on_acc"] is not None and self.aimane.training_config["stop_on_acc"] != 0 and logs["accuracy"] >= self.aimane.training_config["stop_on_acc"] and self.model is not None:
                 self.model.stop_training = True
                 self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
                 self.aimane.write_model_acc(logs["accuracy"])

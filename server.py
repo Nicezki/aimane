@@ -3,7 +3,8 @@ from flask import Flask, request, jsonify, Response, send_from_directory
 from app import aimane
 from flask import request, render_template
 from flask_cors import CORS, cross_origin
-from waitress import serve
+
+
 
 
 app = Flask(__name__)
@@ -106,6 +107,7 @@ def sse_predictresults():
                 yield 'data: {}\n\n'.format(status)
                 predict_prev_result = status
             time.sleep(0.5)
+        
 
     return Response(gen(), mimetype='text/event-stream')
 
@@ -118,30 +120,33 @@ def sse_predictresults():
 
 def sse_events():
     def gen():
-        prev_status = None
-        train_prev_status = None
-        predict_prev_result = None
-        while True:
-            status = aimane.get_status()
-            train_status = aimane.get_train_status()
-            predict_result = aimane.get_prediction_result()
+        try:
+            prev_status = None
+            train_prev_status = None
+            predict_prev_result = None
+            while True:
+                status = aimane.get_status()
+                train_status = aimane.get_train_status()
+                predict_result = aimane.get_prediction_result()
 
-            # Custom events : Status
-            if status is not None and status != prev_status:
-                yield 'event: status\ndata: {}\n\n'.format(status)
-                prev_status = status
+                # Custom events : Status
+                if status is not None and status != prev_status:
+                    yield 'event: status\ndata: {}\n\n'.format(status)
+                    prev_status = status
 
-            # Custom events : Train Status
-            if train_status is not None and train_status != train_prev_status:
-                yield 'event: trainstatus\ndata: {}\n\n'.format(train_status)
-                train_prev_status = train_status
-            
-            # Custom events : Prediction Result
-            if predict_result is not None and predict_result != predict_prev_result:
-                yield 'event: predictresults\ndata: {}\n\n'.format(predict_result)
-                predict_prev_result = predict_result
+                # Custom events : Train Status
+                if train_status is not None and train_status != train_prev_status:
+                    yield 'event: trainstatus\ndata: {}\n\n'.format(train_status)
+                    train_prev_status = train_status
+                
+                # Custom events : Prediction Result
+                if predict_result is not None and predict_result != predict_prev_result:
+                    yield 'event: predictresults\ndata: {}\n\n'.format(predict_result)
+                    predict_prev_result = predict_result
 
-            time.sleep(0.2)
+                time.sleep(0.2)
+        finally:
+                print("Closing connection")
 
     return Response(gen(), mimetype='text/event-stream')
 
@@ -302,6 +307,12 @@ def setconfig():
         elif model == "false" or model == "False" or model == "0":
             model = False
         aimane.set_training_config(save_model=model)
+    if request.args.get('facc') != None:
+        stopacc = request.args.get('facc')
+        # Check if the stopacc is in the correct format float like this 0.0000 to 1.0000
+        if stopacc != None and stopacc != "" and stopacc.replace(".", "", 1).isdigit() and float(stopacc) >= 0 and float(stopacc) <= 1:
+            stopacc = float(stopacc)
+            aimane.set_training_config(stop_on_acc=stopacc)
     return aimane.get_training_config()
 
 
@@ -357,9 +368,30 @@ def script():
 # Old just for testing purpose app before v1 was created
 # The purpose of this app is to test the api path and see if it works
 
+
+#Index
+@app.route('/app/v0/', methods=['GET'])
+def indexv0():
+    return send_from_directory('app/frontend/v0', 'index.html')
+
+@app.route('/app/v1/', methods=['GET'])
+def indexv1():
+    return send_from_directory('app/frontend/v1', 'index.html')
+
+
+
+#Script
 @app.route('/app/<path:path>')
 def appv0(path):
     return send_from_directory('app/frontend', path)
+
+
+
+
+
+
+
+
 
 
 
@@ -386,22 +418,33 @@ if __name__ == '__main__':
     #app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/site-cert.pem', 'app/ssl/site-key.pem'))
     
 
-
-
     ####### FOR PRODUCTION ########
 
     # FOR PRODUCTION WITHOUT SSL 
     # This is the default setting for production
     # Professors, please use this
     # This will use waitress as the production server instead of flask
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v1/ to access the app version 1")
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v0/ to access the app version prototype")
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/<path> to access the api")
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/sse/<path> to access the Server sent event api")
+    aimane.sysmane.write_status("[SERVER] Server is started")
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=5000, threads=16)
+
+else :
+    # call with 
+    # waitress-serve --listen=*:5000 server:server_app
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v1/ to access the app version 1")
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v0/ to access the app version prototype")
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/<path> to access the api")
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/sse/<path> to access the Server sent event api")
+    aimane.sysmane.write_status("[SERVER] Server is started in production mode")
+
+    server_app = app
+
 
     
-    aimane.sysmane.write_status("Use http://localhost:5000/app/v1/index.html to access the app version 1")
-    aimane.sysmane.write_status("Use http://localhost:5000/app/v0/index.html to access the app version prototype")
-    aimane.sysmane.write_status("Use http://localhost:5000/api/<path> to access the api")
-    aimane.sysmane.write_status("Use http://localhost:5000/api/sse/<path> to access the Server sent event api")
-    aimane.sysmane.write_status("Server is started")
-    serve(app, host='0.0.0.0', port=5000)
 
 
 

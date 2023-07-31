@@ -4,3 +4,6 @@ store
 app/__pycache__/
 model
 result
+venv/
+.pem
+__pycache__/

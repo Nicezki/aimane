@@ -43,9 +43,10 @@ class AIManeUI {
                         "smn-epoch" : document.querySelector(".smn-epoch div h1"), //.textContent = "1"
                     "btn-configtrain" : document.querySelector(".btn-configtrain"), //Trigger click event
                     "smn-training-config-box" : document.querySelector(".smn-training-config-box"), //.style.display = "Flex" or "None"
-
                         "conf-cur-epoch" : document.querySelector(".conf-cur-epoch div h6"), //.textContent = "Current: 25"
                         "form-field-epoch" : document.querySelector("#form-field-epoch"), // Text Field
+                        "conf-cur-facc" : document.querySelector(".conf-cur-facc div h6"), //.textContent = "Current: 0.0000"
+                        "form-field-facc" : document.querySelector("#form-field-facc"), // Text Field
                         "conf-cur-uc" : document.querySelector(".conf-cur-uc div h6"), // .textContent = "Current: true"
                         "form-field-uc" : document.querySelector("#form-field-uc"), // Dropdown
                         "conf-cur-saveimg" : document.querySelector(".conf-cur-saveimg div h6"), // .textContent = "Current: true"
@@ -157,7 +158,7 @@ class AIManeUI {
     }
 
     init() {
-        this.consoleLog("「AIMANE」 by Nattawut Manjai-araya  v1.0.0");
+        this.consoleLog("「AIMANE」 by Nattawut Manjai-araya  v1.1.0");
         // Init UI
 
         // Prepare server list
@@ -232,6 +233,11 @@ class AIManeUI {
             this.setTrainConfig("model", this.ui_elements["form-field-savemodel"].value);
         });
 
+        this.ui_elements["form-field-facc"].addEventListener("change", () => {
+            this.consoleLog("Finish Acc changed to " + this.ui_elements["form-field-facc"].value);
+            this.setTrainConfig("facc", this.ui_elements["form-field-facc"].value);
+        });
+
     }
 
     toggleTrainConfig() {
@@ -256,6 +262,10 @@ class AIManeUI {
                 response.json().then((data) => {
                     this.ui_elements["conf-cur-epoch"].textContent = "Current: " + data["epochs"];
                     this.ui_elements["form-field-epoch"].value = data["epochs"];
+                    // If finish acc is 0.0000 or 0 then showing Disable text instead of 0
+                    let cur_facc_text = data["stop_on_acc"] == 0.0000 || data["stop_on_acc"] == 0 ? "Disable" : data["stop_on_acc"];
+                    this.ui_elements["conf-cur-facc"].textContent = "Current: " + cur_facc_text;
+                    this.ui_elements["form-field-facc"].value = data["stop_on_acc"];
                     this.ui_elements["conf-cur-uc"].textContent = "Current: " + data["usercontent"];
                     this.ui_elements["form-field-uc"].value = data["usercontent"];
                     this.ui_elements["conf-cur-saveimg"].textContent = "Current: " + data["save_image"];
@@ -291,6 +301,10 @@ class AIManeUI {
                 response.json().then((data) => {
                     this.ui_elements["conf-cur-epoch"].textContent = "Current: " + data["epochs"];
                     this.ui_elements["form-field-epoch"].value = data["epochs"];
+                    // If finish acc is 0.0000 or 0 then showing Disable text instead of 0
+                    let cur_facc_text = data["stop_on_acc"] == 0.0000 || data["stop_on_acc"] == 0 ? "Disable" : data["stop_on_acc"];
+                    this.ui_elements["conf-cur-facc"].textContent = "Current: " + cur_facc_text;
+                    this.ui_elements["form-field-facc"].value = data["stop_on_acc"];
                     this.ui_elements["conf-cur-uc"].textContent = "Current: " + data["usercontent"];
                     this.ui_elements["form-field-uc"].value = data["usercontent"];
                     this.ui_elements["conf-cur-saveimg"].textContent = "Current: " + data["save_image"];
@@ -1029,6 +1043,17 @@ class AIManeUI {
         }
     }
 
+
+    epochProgressBox(epoch) {
+        let epochProgressBox = document.querySelector(".ep-" + epoch);
+        return epochProgressBox;
+    }
+
+    epochProgressBoxTextContent(epoch) {
+        let epochProgressBoxText = document.querySelector(".ep-" + epoch + " div div h4").textContent;
+        return epochProgressBoxText;
+    }
+
     handleTrainHistory(data,finished = false,live_acc = null) {
         // {
             // "e1": 0.8696097135543823, 
@@ -1055,6 +1080,18 @@ class AIManeUI {
             // Other will use  this.setEpochPassive(epoch, value); 
                 // Check if createdEpochProgressBox is false
                 if (!this.createdEpochProgressBox) {
+                    this.createEpochProgressBox(this.trainstatus.total_epoch);
+                }
+
+                // epoch is number so convert it to string before using it
+                if (this.epochProgressBoxTextContent(epoch) != "" + epoch) {
+                    if(this.epochProgressBoxTextContent(epoch) == ""+rvalue){
+                        this.consoleLog("[Mane Detect Debug] Epoch " + epoch + " seem to already have OK data", "SUCESS");
+                        continue;
+                    }
+
+                    this.consoleLog("[Mane Detect] Epoch " + epoch + " seem to already have data in it. Trying to resetting it...", "WARN");
+                    this.deleteAllEpochProgressBox();
                     this.createEpochProgressBox(this.trainstatus.total_epoch);
                 }
 
