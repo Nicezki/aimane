@@ -621,7 +621,7 @@ class AiMane:
     def train(self):
         self.sysmane.write_status("Training model starting...", stage="Training model", percentage=0)
         # Check if the dataset is prepared and have dataset in it. check if count.txt exists inside the dataset pa
-        if not os.path.exists(self.dataset_path or not os.path.exists("{}/dataset".format(self.dataset_path or not os.path.exists("{}/count.txt".format(self.dataset_path))))):
+        if not os.path.exists(self.dataset_path) or not os.path.exists("{}/dataset".format(self.dataset_path)) or not os.path.exists("{}/count.txt".format(self.dataset_path)):
             self.sysmane.write_status("[ERROR] Dataset is not prepared.")
             return "Dataset is not prepared."
         else:
