@@ -40,22 +40,33 @@ class AiMane:
             "save_model" : True,
             "classes" : 10,
             "class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            "classes_custom" : 26,
+            "class_names_custom" : ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
             "uc_classes" : 12,
             "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star","Heart"],
+            "uc_classes_custom" : 26,
+            "uc_class_names_custom" : ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
             "save_folder_train_pre" : "training",
             "save_folder_validate_pre" : "validate",
             "save_folder_train_pre_custom" : "training_2nd",
             "save_folder_validate_pre_custom" : "validate_2nd",
+            "usercontent_folder" : "uc",
+            "usercontent_folder_custom" : "uc_2nd",
+            "countfile" : "count.txt",
+            "countfile_custom" : "count_custom.txt",
+            "result_folder" : "result",
+            "result_folder_custom" : "result_2nd",
         }
         self.model_name = "model.h5"
+        self.model_name_custom = "model_2nd.h5"
         self.sysmane = SysMane.SysMane()
         self.dataset_path = self.sysmane.dataset_path
         self.store_path = self.sysmane.store_path
         self.app_path = self.sysmane.app_path
         self.model = None
-        self.model_2nd = None
+        self.model_custom = None
         self.model_loaded = False
-        self.model_2nd_loaded = False
+        self.model_loaded_custom = False
         self.model_trained = False
         self.last_model_acc = 0
         self.running_config = {
@@ -255,22 +266,40 @@ class AiMane:
         
 
 
-    def load_model(self):
+    def load_model(self, mode = None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            model_name = self.model_name_custom
+        else :
+            model_name = self.model_name
+
         self.sysmane.write_status("[INFO] Loading model...",stage="Loading model",percentage=0)
+
         # Check if model is already loaded
-        if self.model_loaded:
-            return "01"
-            #"MODEL_ALREADY_LOADED"
+        if(mode == 1):
+            if self.model_loaded_custom:
+                return "01"
+                #"MODEL_ALREADY_LOADED"
+        else:
+            if self.model_loaded:
+                return "01"
+                #"MODEL_ALREADY_LOADED"
 
         # Check if model file exists
-        if not os.path.exists("{}/model/{}".format(self.store_path, self.model_name)):
+        if not os.path.exists("{}/model/{}".format(self.store_path, model_name)):
             self.sysmane.write_status("[ERROR] Model file not found.")
             return "02"
             #"MODEL_NOT_FOUND"
         
         # Load model
         self.sysmane.write_status("[INFO] Loading model...",stage="Loading model",percentage=50)
-        self.model = load_model("{}/model/{}".format(self.store_path, self.model_name))
+        if(mode == 1):
+            self.model_custom = load_model("{}/model/{}".format(self.store_path, model_name))
+        else:
+            self.model = load_model("{}/model/{}".format(self.store_path, model_name))
         # Check if model is loaded
         if self.model is None:
             self.sysmane.write_status("[ERROR] Model file is corrupted.")
@@ -318,13 +347,13 @@ class AiMane:
             # else:
                 # Check if the dataset is complete
                 for i in range(self.training_config["classes"]):
-                    if not os.path.exists("{}/training/{}".format(self.dataset_path, i)):
+                    if not os.path.exists("{}/{}/{}".format(self.dataset_path, save_folder_train_pre, i)):
                         self.sysmane.write_status("[WARN] Data {} is missing. Force prepare.".format(i))
                         self.sysmane.write_status("Re-initializing (Repair) because data {} is missing.".format(i), 0)
                         return "01"
                         #"REPAIR_NEEDED"
 
-                    if not os.path.exists("{}/validate/{}".format(self.dataset_path, i)):
+                    if not os.path.exists("{}/{}/{}".format(self.dataset_path, save_folder_validate_pre, i)):
                         self.sysmane.write_status("[WARN] Data {} is missing. Force prepare.".format(i))
                         self.sysmane.write_status("Re-initializing (Repair) because data {} is missing.".format(i), 0)
                         return "01"
@@ -335,9 +364,9 @@ class AiMane:
                     # Count files in training folder
                     for i in range(self.training_config["classes"]):
                         self.sysmane.write_status("[INFO] Counting files in training folder...",nowrite=True)
-                        self.training_count = len(os.listdir("{}/training/{}".format(self.dataset_path, i)))
+                        self.training_count = len(os.listdir("{}/{}/{}".format(self.dataset_path, save_folder_train_pre, i)))
                         self.sysmane.write_status("[INFO] Counting files in validate folder...",nowrite=True)
-                        self.validate_count = len(os.listdir("{}/validate/{}".format(self.dataset_path, i)))
+                        self.validate_count = len(os.listdir("{}/{}/{}".format(self.dataset_path, save_folder_validate_pre, i)))
                         # Compare with self.running_config["train_count"] //Array of training count
                         if self.running_config["train_count"][i] == 0:
                             self.sysmane.write_status("[WARN] Metadata count for training is 0. Force prepare.")
@@ -368,7 +397,6 @@ class AiMane:
                         else:
                             self.sysmane.write_status("[OK] Data {} is OK.".format(i))
                     
-
                     else:
                         self.sysmane.write_status("[OK] Dataset is already prepared. Yay~!")
                         return "00"
@@ -380,7 +408,10 @@ class AiMane:
             #"NOT_PREPARED"
             
         
-    def repair_dataset(self):
+    def repair_dataset(self,mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+
         # Remove .prepare_lock file
         if os.path.exists("{}/.prepare_lock".format(self.store_path)):
             self.sysmane.write_status("[INFO] Removing .prepare_lock file.")
@@ -388,7 +419,7 @@ class AiMane:
         else:
             self.sysmane.write_status("[INFO] .prepare_lock file not found, Skipping.")
         # Run prepare_dataset
-        self.prepare_dataset()
+        self.prepare_dataset(mode)
 
 
     def count_dataset(self,mode=None):
@@ -400,11 +431,11 @@ class AiMane:
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
-            countfile = "count_custom.txt"
+            countfile = self.training_config["countfile_custom"]
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
-            countfile = "count.txt"
+            countfile = self.training_config["countfile"]
         
         # Count the number of files in training folder then compare with the number of files in validate folder
         # Using count.txt
@@ -433,11 +464,11 @@ class AiMane:
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
-            countfile = "count_custom.txt"
+            countfile = self.training_config["countfile_custom"]
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
-            countfile = "count.txt"
+            countfile = self.training_config["countfile"]
 
 
         # Count the number of images in the training and validation sets then save them to a file for later use.
@@ -468,19 +499,15 @@ class AiMane:
         if mode is None:
             mode = self.load_dataset_mode
         if mode == 1:
-            save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
-            save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
-            countfile = "count_custom.txt"
+            countfile = self.training_config["countfile_custom"]
         else :
-            save_folder_train_pre = self.training_config["save_folder_train_pre"]
-            save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
-            countfile = "count.txt"
+            countfile = self.training_config["countfile"]
 
         # From count.txt
         self.sysmane.write_status("Getting training and validation counts from file", percentage=0, nowrite=True)
         # Check if count.txt exists
         if not os.path.exists("{}/{}".format(self.dataset_path, countfile)):
-            self.sysmane.write_status("count.txt not found. Creating count.txt", percentage=0, nowrite=True)
+            self.sysmane.write_status(f"Count file not found. Creating new count file at {self.dataset_path}/{countfile}")
             self.write_dataset_count()
 
         with open("{}/{}".format(self.dataset_path, countfile), "r") as f:
@@ -536,9 +563,14 @@ class AiMane:
         if not os.path.exists("{}/dataset".format(self.dataset_path)):
             self.sysmane.write_status("Creating dataset directory")
             self.sysmane.write_status("Dataset directory is missing. Creating dataset directory.")
-            os.mkdir("{}/dataset".format(self.dataset_path))
+            #Make dir if not exist (Handle error if dir exist)
+            try:
+                os.mkdir("{}/".format(self.dataset_path))
+            except FileExistsError:
+                self.sysmane.write_status("[INFO] Dataset directory already exists.")
+
             # Check if the dataset directory is created.
-            if os.path.exists("{}/dataset".format(self.dataset_path)):
+            if os.path.exists("{}/".format(self.dataset_path)):
                 self.sysmane.write_status("[OK] Dataset directory is created.")
             else:
                 self.sysmane.write_status("[ERROR] Dataset directory is not created.")
@@ -570,9 +602,8 @@ class AiMane:
             test_images = np.array(test_images)
             test_labels = np.array(test_labels)
             #Set training config
-            self.training_config["classes"] = 26
-            self.training_config["class_names"] = ["A","B","C","D","E","F","G","H","I","J","K","L","M",
-                                                    "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+            self.training_config["classes"] = self.training_config["classes_custom"]
+            self.training_config["class_names"] = self.training_config["class_names_custom"]
             #Merge test_images and test_labels to train_images and train_labels for splitting later
             train_images = np.concatenate((train_images, test_images), axis=0)
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
@@ -598,33 +629,33 @@ class AiMane:
         # Save the training and validation sets to separate directories.
         for i in range(self.training_config["classes"]):
             progress = int((i+1)/10*100)
-            self.sysmane.write_status("Creating directory {}/{}/{}".format(self.dataset_path, i), save_folder_train_pre, progress)
-            os.makedirs("{}/training/{}".format(self.dataset_path, i), exist_ok=True)
+            self.sysmane.write_status("Creating directory {}/{}/{}".format(self.dataset_path ,save_folder_train_pre, i), percentage=progress, nowrite=True)
+            os.makedirs("{}/{}/{}".format(self.dataset_path, save_folder_train_pre, i), exist_ok=True)
 
             progress = int((i+1)/10*100)
-            self.sysmane.write_status("Creating directory {}/validate/{}".format(self.dataset_path, i), save_folder_validate_pre, progress)
-            os.makedirs("{}/validate/{}".format(self.dataset_path, i), exist_ok=True)
+            self.sysmane.write_status("Creating directory {}/{}/{}".format(self.dataset_path, i ,save_folder_validate_pre), percentage=progress, nowrite=True)
+            os.makedirs("{}/{}/{}".format(self.dataset_path, save_folder_validate_pre, i), exist_ok=True)
 
         for idx, (image, label) in enumerate(zip(train_images, train_labels)):
             progress = int((idx+1)/train_images.shape[0]*100)
             #Skip if the image is already saved.
             if os.path.exists("{}/{}/{}/{}.png".format(self.dataset_path, save_folder_train_pre, label, idx)):
-                self.sysmane.write_status("Skipping image {} to {} because it is already saved.".format(idx, "{}/training/{}/{}.png".format(self.dataset_path, label, idx)),nowrite=True,percentage=progress)
+                self.sysmane.write_status("Skipping image {} to {} because it is already saved.".format(idx, "{}/{}/{}/{}.png".format(self.dataset_path, save_folder_train_pre, label, idx)),nowrite=True, percentage=progress)
                 continue
             filename = "{}/{}/{}/{}.png".format(self.dataset_path, save_folder_train_pre, label, idx)
             self.sysmane.write_status("Saving image {} to {}".format(idx, filename),nowrite=True)
-            self.sysmane.write_status("Saving  train image {} to {}".format(idx, filename), progress)
+            self.sysmane.write_status("Saving train image {} to {}".format(idx, filename), percentage=progress)
             self.save_image(image, filename)
 
         for idx, (image, label) in enumerate(zip(validate_images, validate_labels)):
             #Skip if the image is already saved.
             if os.path.exists("{}/{}/{}/{}.png".format(self.dataset_path, save_folder_validate_pre, label, idx)):
-                self.sysmane.write_status("Skipping image {} to {} because it is already saved.".format(idx, "{}/validate/{}/{}.png".format(self.dataset_path, label, idx)),nowrite=True)
+                self.sysmane.write_status("Skipping image {} to {} because it is already saved.".format(idx, "{}/{}/{}/{}.png".format(self.dataset_path, save_folder_validate_pre, label, idx)),nowrite=True)
                 continue
             progress = int((idx+1)/validate_images.shape[0]*100)
             filename = "{}/{}/{}/{}.png".format(self.dataset_path, save_folder_validate_pre, label, idx)
             self.sysmane.write_status("Saving image {} to {}".format(idx, filename),nowrite=True)
-            self.sysmane.write_status("Saving validate image {} to {}".format(idx, filename), progress)
+            self.sysmane.write_status("Saving validate image {} to {}".format(idx, filename), percentage=progress)
             self.save_image(image, filename)
 
         # Write the number of images in the training and validation sets to a file.
@@ -657,24 +688,41 @@ class AiMane:
             self.sysmane.write_status("[ERROR] Image {} is not saved.".format(filename))
 
 
-    def load_dataset(self):
+    def load_dataset(self,mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.load_dataset_mode
         if mode == 1:
+            save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
+            save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
+            uc_folder = self.training_config["usercontent_folder_custom"]
+        else :
+            save_folder_train_pre = self.training_config["save_folder_train_pre"]
+            save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
+            uc_folder = self.training_config["usercontent_folder"]
+            
 
         self.sysmane.write_status("Loading dataset...", stage="Loading dataset", percentage=0)
-        # Load the dataset
-        train_images, train_labels = self.load_mnist("{}/training".format(self.dataset_path))
-        validate_images, validate_labels = self.load_mnist("{}/validate".format(self.dataset_path))
+
+        train_images, train_labels = self.load_mnist("{}/{}".format(self.dataset_path, save_folder_train_pre))
+        validate_images, validate_labels = self.load_mnist("{}/{}".format(self.dataset_path, save_folder_validate_pre))
+
         # If usercontent is True, also load the usercontent dataset.
         if self.training_config["usercontent"]:
             #Check if the usercontent dataset exists.
-            if not os.path.exists("{}/uc".format(self.store_path)):
+            if not os.path.exists("{}/{}".format(self.store_path, uc_folder)):
                 self.sysmane.write_status("[WARNING!] Usercontent dataset does not exist, Fall back to training dataset only.")
-                self.training_config["classes"] = 10
-                self.training_config["class_names"] = ["0","1","2","3","4","5","6","7","8","9"]
+                if mode == 1:
+                    self.training_config["classes"] = self.training_config["classes_custom"]
+                    self.training_config["class_names"] = self.training_config["class_names_custom"]
+                else:
+                    self.training_config["classes"] = 10
+                    self.training_config["class_names"] = ["0","1","2","3","4","5","6","7","8","9"]
                 self.running_config["usercontent_valid"] = False
             # Load the usercontent dataset.
             if self.running_config["usercontent_valid"]:
-                usercontent_images, usercontent_labels = self.load_mnist("{}/uc".format(self.store_path), usercontent=True)
+                usercontent_images, usercontent_labels = self.load_mnist("{}/{}".format(self.store_path, uc_folder), usercontent = True)
                 if usercontent_images is not None and usercontent_labels is not None and train_images is not None and train_labels is not None:
                     # Concatenate the usercontent dataset to the training dataset.
                     train_images = np.concatenate((train_images, usercontent_images))
@@ -696,20 +744,33 @@ class AiMane:
             return train_images, train_labels, validate_images, validate_labels
         
 
-    def load_mnist(self, path, usercontent=False):
+    def load_mnist(self, path, usercontent=False, mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        training_classes = 10
+    
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            self.training_config["classes"] = self.training_config["classes_custom"]
+            self.training_config["class_names"] = self.training_config["class_names_custom"]
+            if usercontent:
+                training_classes = self.training_config["uc_classes_custom"]
+
+        else :
+            self.training_config["classes"] = 10
+            self.training_config["class_names"] = ["0","1","2","3","4","5","6","7","8","9"]  
+            if usercontent:
+                training_classes = self.training_config["uc_classes"]
+            else:
+                training_classes = self.training_config["classes"]
+        
         self.sysmane.write_status("Loading MNIST dataset from {}...".format(path), nowrite=True)
+
         # Load the dataset
         images = []
         labels = []
 
-        # Set training classes in config
-        self.training_config["classes"] = 10
-        self.training_config["class_names"] = ["0","1","2","3","4","5","6","7","8","9"]
-
-        if usercontent:
-            training_classes = self.training_config["uc_classes"]
-        else:
-            training_classes = self.training_config["classes"]
 
         for i in range(training_classes):
             progress = int((i+1)/self.training_config["classes"]*100)
@@ -731,7 +792,10 @@ class AiMane:
                     labels.append(i)
         images = np.array(images)
         labels = np.array(labels)
-        self.sysmane.write_status("Loading MNIST dataset from {} finished.".format(path))
+        if mode == 1:
+            self.sysmane.write_status("Loading Custom dataset from {} finished.".format(path))
+        else:
+            self.sysmane.write_status("Loading MNIST dataset from {} finished.".format(path))
         return images, labels
     
 
@@ -948,10 +1012,26 @@ class AiMane:
         
 
 
-    def train(self):
+    def train(self,mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
+            save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
+            uc_folder = self.training_config["usercontent_folder_custom"]
+            countfile = self.training_config["countfile_custom"]
+
+        else :
+            save_folder_train_pre = self.training_config["save_folder_train_pre"]
+            save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
+            uc_folder = self.training_config["usercontent_folder"]
+            countfile = self.training_config["countfile"]
+
         self.sysmane.write_status("Training model starting...", stage="Training model", percentage=0)
-        # Check if the dataset is prepared and have dataset in it. check if count.txt exists inside the dataset pa
-        if not os.path.exists(self.dataset_path) or not os.path.exists("{}/dataset".format(self.dataset_path)) or not os.path.exists("{}/count.txt".format(self.dataset_path)):
+        # Check if the dataset is prepared and have dataset in it. check if count.txt exists inside the dataset path
+        if not os.path.exists(self.dataset_path) or not os.path.exists("{}".format(self.dataset_path)) or not os.path.exists("{}/{}".format(self.dataset_path, countfile)):
             self.sysmane.write_status("[ERROR] Dataset is not prepared.")
             return "Dataset is not prepared."
         else:
@@ -987,7 +1067,16 @@ class AiMane:
             return True
 
 
-    def train_model(self, train_images, train_labels):
+    def train_model(self, train_images, train_labels,mode=None):
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            classes = self.training_config["uc_classes_custom"] 
+            model_name = self.model_name_custom
+        else:
+            classes = self.training_config["uc_classes"]
+            model_name = self.model_name
+            
         # USE GPU or CPU
         if self.training_config["use_gpu"]:
             os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -1004,7 +1093,7 @@ class AiMane:
         self.sysmane.write_status("Training model", stage="Training model", percentage=0)
         self.sysmane.write_status("Training model at {}".format(self.get_current_time()))
         train_images = train_images.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0 # Normalize the images to a range of [0, 1]
-        classes = self.training_config["uc_classes"] 
+        # classes = self.training_config["uc_classes"] 
         train_labels = np.eye(classes)[train_labels]
         model = tf.keras.models.Sequential()
         model.add(Conv2D(64, (3, 3), activation="relu", input_shape=(28, 28, 1))) # Add a convolutional layer with 64 filters, a kernel size of 3x3, and relu activation
@@ -1022,7 +1111,6 @@ class AiMane:
         # Start training
         model.fit(train_images, train_labels, epochs=self.training_config["epochs"], callbacks=callbacks)
 
-
         # Give back VRAM to the system
         if self.training_config["use_gpu"]:
             tf.keras.backend.clear_session()
@@ -1033,64 +1121,88 @@ class AiMane:
             current_model_acc = self.get_model_acc()
             self.sysmane.write_status("Current model accuracy: {}".format(current_model_acc))
 
-            # Check if the current model accuracy is lower than last model accuracy
-            if isinstance(self.last_model_acc, int) and isinstance(current_model_acc, int) and self.last_model_acc > current_model_acc:
-                self.sysmane.write_status("Last model accuracy is higher than current model accuracy. Discarding current model.")
-                # Rename the model file to model_discarded_{accuracy}.h5
-                model.save("{}/model/model_discarded_{}.h5".format(self.store_path, current_model_acc))
-                #Rename back the last model file to model.h5
-                os.rename("{}/model/model_{}.h5".format(self.store_path, self.last_model_acc), "{}/model/model.h5".format(self.store_path))
-            else:
-                self.sysmane.write_status("Current model accuracy is higher than last model accuracy. Saving current model.")
-                # Save the model
-                model.save("{}/model/model.h5".format(self.store_path))
-                self.sysmane.write_status("Model saved at path: {}/model".format(self.store_path))
-                self.sysmane.write_status("Training model finished with accuracy: {}".format(current_model_acc))
+            # # Check if the current model accuracy is lower than last model accuracy
+            # if isinstance(self.last_model_acc, int) and isinstance(current_model_acc, int) and self.last_model_acc > current_model_acc:
+            #     self.sysmane.write_status("Last model accuracy is higher than current model accuracy. Discarding current model.")
+            #     # Rename the model file to model_discarded_{accuracy}.h5
+            #     model.save("{}/model/model_discarded_{}.h5".format(self.store_path, current_model_acc))
+            #     #Rename back the last model file to model.h5
+            #     os.rename("{}/model/model_{}.h5".format(self.store_path, self.last_model_acc), "{}/model/model.h5".format(self.store_path))
+            # else:
+            self.sysmane.write_status("Current model accuracy is higher than last model accuracy. Saving current model.")
+            # Save the model
+            model.save("{}/model/{}".format(self.store_path, model_name))   
+            self.sysmane.write_status("Model saved at path: {}/model".format(self.store_path))
+            self.sysmane.write_status("Training model finished with accuracy: {}".format(current_model_acc))
 
         else:
             self.sysmane.write_status("Training model finished without saving model because save_model is set to False, Finished with accuracy: {}".format(self.get_model_acc()))
 
 
 
-    def test_model(self, test_images, test_labels):
-        self.sysmane.write_status("Testing model", stage="Testing model", percentage=0)
-        load_result = self.load_model()
-        #00 - Model loaded successfully
-        #01 - Model already loaded
-        #02 - Model file not found
-        #03 - Model file is corrupted
+    # [Obsolete @ AIMANE v2.0] Use the new test_model instead
 
-        if load_result == "02":
-            self.sysmane.write_status("Model file not found. Please train the model first.")
-            return False
-        elif load_result == "03":
-            self.sysmane.write_status("Model file is corrupted. Please train the model again.")
-            return False
+    # def test_model(self, test_images, test_labels, mode = None):
+
+    #     # Mode 0: MNIST dataset
+    #     # Mode 1: TFRecord dataset
+    #     if mode is None:
+    #         mode = self.load_dataset_mode
+
         
-        model = self.model
+    #     self.sysmane.write_status("Testing model", stage="Testing model", percentage=0)
+    #     load_result = self.load_model()
 
-        # Check if the model is loaded successfully
-        if model == None:
-            self.sysmane.write_status("Model is not loaded. Please train the model first.")
-            return False
+    #     #00 - Model loaded successfully
+    #     #01 - Model already loaded
+    #     #02 - Model file not found
+    #     #03 - Model file is corrupted
 
-        test_images = test_images.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0
-        test_labels = np.eye(10)[test_labels] 
+    #     if load_result == "02":
+    #         self.sysmane.write_status("Model file not found. Please train the model first.")
+    #         return False
+    #     elif load_result == "03":
+    #         self.sysmane.write_status("Model file is corrupted. Please train the model again.")
+    #         return False
+        
+    #     if mode == 1:
+    #         model = self.model_custom
+    #     else:
+    #         model = self.model
 
-        predictions = model.predict(test_images)
-        predictions = np.argmax(predictions, axis=1)
+    #     # Check if the model is loaded successfully
+    #     if model == None:
+    #         self.sysmane.write_status("Model is not loaded. Please train the model first.")
+    #         return False
 
-        os.makedirs("result", exist_ok=True)
-        for i in range(self.training_config["classes"]):
-            os.makedirs("{}/{}".format(self.store_path, i), exist_ok=True)
+    #     test_images = test_images.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0
+    #     test_labels = np.eye(self.training_config["classes"])[test_labels]
 
-        for i in range(len(predictions)):
-            if predictions[i] != np.argmax(test_labels[i]):
-                image = test_images[i].reshape((28, 28))
-                image = Image.fromarray(image)
-                image.save("{}/{}/{}.png".format(self.store_path, predictions[i], i))
+    #     predictions = model.predict(test_images)
+    #     predictions = np.argmax(predictions, axis=1)
 
-    def test_model_live(self, image):
+    #     os.makedirs("result", exist_ok=True)
+    #     for i in range(self.training_config["classes"]):
+    #         os.makedirs("{}/{}".format(self.store_path, i), exist_ok=True)
+
+    #     for i in range(len(predictions)):
+    #         if predictions[i] != np.argmax(test_labels[i]):
+    #             image = test_images[i].reshape((28, 28))
+    #             image = Image.fromarray(image)
+    #             image.save("{}/{}/{}.png".format(self.store_path, predictions[i], i))
+
+
+    def test_model(self, image, mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            save_folder = self.training_config["result_folder_custom"]
+        else :
+            save_folder = self.training_config["result_folder"]
+
+
         load_result = self.load_model()
         #00 - Model loaded successfully
         #01 - Model already loaded
@@ -1105,8 +1217,10 @@ class AiMane:
             self.sysmane.write_status("Model file is corrupted. Please train the model again.")
             return "Model file is corrupted. Please train the model again."
         
-        
-        model = self.model
+        if mode == 1:
+            model = self.model_custom
+        else:
+            model = self.model
 
         # Check if the model is loaded successfully
         if model == None:
@@ -1137,7 +1251,7 @@ class AiMane:
             self.sysmane.write_status("Image saving is disabled. Skipping image saving")
             return predictions
         # Save the image to {storepath}/result/{prediction}--{uuid}.png
-        os.makedirs("{}/result".format(self.store_path), exist_ok=True)
+        os.makedirs("{}/{}".format(self.store_path, save_folder), exist_ok=True)
         # File name will determine by the image data to avoid duplicate dataset
         filename = hashlib.md5(image_data).hexdigest()
         # Banned filename will be discarded
@@ -1147,7 +1261,7 @@ class AiMane:
             return predictions
         
 
-        filepath = "{}/result/{}--{}.png".format(self.store_path, predictions[0], "uc_" + filename)
+        filepath = "{}/{}/{}--{}.png".format(self.store_path, save_folder, predictions[0], "uc_" + filename)
         self.save_image(image, filepath)
         self.running_config["last_prediction"] = predictions[0]
         self.running_config["last_prediction_uuid"] = "uc_" + filename
@@ -1158,17 +1272,26 @@ class AiMane:
         return predictions
     
 
-    def define_prediction(self,new_prediction, prediction, uuid):
+    def define_prediction(self,new_prediction, prediction, uuid, mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            save_folder = self.training_config["result_folder_custom"]
+        else :
+            save_folder = self.training_config["result_folder"]
+
         # Rename file in /result/{prediction}--{uuid}.png to /result/{new_prediction}--{uuid}.png
         # Check if the file exist
-        if os.path.isfile("{}/result/{}--{}.png".format(self.store_path, prediction, uuid)):
+        if os.path.isfile("{}/{}/{}--{}.png".format(self.store_path, save_folder, prediction, uuid)):
             # Check if rename name is already exist or not
-            if os.path.isfile("{}/result/{}--{}.png".format(self.store_path, new_prediction, uuid)):
+            if os.path.isfile("{}/{}/{}--{}.png".format(self.store_path, save_folder, new_prediction, uuid)):
                 self.sysmane.write_status("Prediction already exist", stage="Prediction", percentage=0)
                 # Remove the file
-                os.remove("{}/result/{}--{}.png".format(self.store_path, prediction, uuid))
+                os.remove("{}/{}/{}--{}.png".format(self.store_path, save_folder, prediction, uuid))
                 return False
-            os.rename("{}/result/{}--{}.png".format(self.store_path, prediction, uuid), "{}/result/{}--{}.png".format(self.store_path, new_prediction, uuid))
+            os.rename("{}/{}/{}--{}.png".format(self.store_path, save_folder, prediction, uuid), "{}/result/{}--{}.png".format(self.store_path, new_prediction, uuid))
             self.sysmane.write_status("Prediction defined to {}".format(new_prediction), stage="Prediction", percentage=0)
             return True
         else:
@@ -1185,58 +1308,81 @@ class AiMane:
         return self.define_prediction(new_prediction, prediction, uuid)
     
 
-    def rewrite_filename(self):
+    def rewrite_filename(self,mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            uc_folder = self.training_config["usercontent_folder_custom"]
+            res_folder = self.training_config["result_folder_custom"]
+        else :
+            uc_folder = self.training_config["usercontent_folder"]
+            res_folder = self.training_config["result_folder"]
+
         self.sysmane.write_status("Rewriting filename", stage="Rewriting filename", percentage=0)
         # Use this for upgrade from uuid to hashlib md5
         # Copy back all images in {storepath}/uc/{label} to {storepath}/result
         #{storepath}/uc/{label}/{uuid}.png => {storepath}/result/{prediction}--{uuid}.png
-        for label in os.listdir("{}/uc".format(self.store_path)):
-            for filename in os.listdir("{}/uc/{}".format(self.store_path, label)):
+        for label in os.listdir("{}/{}".format(self.store_path, uc_folder)):
+            for filename in os.listdir("{}/{}/{}".format(self.store_path, uc_folder, label)):
                 uuid = filename.split(".")[0]
                 prediction = label
-                shutil.copyfile("{}/uc/{}/{}".format(self.store_path, label, filename), "{}/result/{}--{}.png".format(self.store_path, prediction, uuid))
+                shutil.copyfile("{}/{}/{}/{}".format(self.store_path, uc_folder, label, filename), "{}/result/{}--{}.png".format(self.store_path, prediction, uuid))
         # Delete all images in {storepath}/uc
-        shutil.rmtree("{}/uc".format(self.store_path))
-        os.makedirs("{}/uc".format(self.store_path), exist_ok=True)
+        shutil.rmtree("{}/{}".format(self.store_path, uc_folder))
+        os.makedirs("{}/{}".format(self.store_path, uc_folder), exist_ok=True)
 
         # 1. Loop all images in {storepath}/result
         # 2. Read the image
         # 3. Get the Hashlib md5 of the image
         # 4. Copy the image to {storepath}/uc/{label}/{uuid}.png
 
-        for filename in os.listdir("{}/result".format(self.store_path)):
+        for filename in os.listdir("{}/{}".format(self.store_path, res_folder)):
             self.sysmane.write_status("Reading {}".format(filename))
-            image_data = open("{}/result/{}".format(self.store_path, filename), "rb").read()
+            image_data = open("{}/{}/{}".format(self.store_path, res_folder, filename), "rb").read()
             self.sysmane.write_status("Hashing {}".format(filename))
             hmd5 = hashlib.md5(image_data).hexdigest()
             self.sysmane.write_status("Covert {} to {}".format(filename, hmd5))
             prediction = filename.split("--")[0]
-            self.sysmane.write_status("Copying {} to {}/uc/{}/{}.png".format(filename, self.store_path, prediction, hmd5))
-            os.makedirs("{}/uc/{}".format(self.store_path, prediction), exist_ok=True)
-            shutil.copyfile("{}/result/{}".format(self.store_path, filename), "{}/uc/{}/{}.png".format(self.store_path, prediction, hmd5))
+            self.sysmane.write_status("Copying {} to {}/{}/{}/{}.png".format(filename, self.store_path, uc_folder, prediction, hmd5))
+            os.makedirs("{}/{}/{}".format(self.store_path, uc_folder, prediction), exist_ok=True)
+            shutil.copyfile("{}/{}/{}".format(self.store_path, res_folder, filename), "{}/{}/{}/{}.png".format(self.store_path, uc_folder, prediction, hmd5))
 
         # Delete all images in {storepath}/result
-        self.sysmane.write_status("Deleting all images in {}/result".format(self.store_path))
-        shutil.rmtree("{}/result".format(self.store_path))
-        self.sysmane.write_status("Creating {}/result".format(self.store_path))
-        os.makedirs("{}/result".format(self.store_path), exist_ok=True)
+        self.sysmane.write_status("Deleting all images in {}/{}".format(self.store_path, res_folder))
+        shutil.rmtree("{}/{}".format(self.store_path, res_folder))
+        self.sysmane.write_status("Creating {}/{}".format(self.store_path, res_folder))
+        os.makedirs("{}/{}".format(self.store_path, res_folder), exist_ok=True)
         self.sysmane.write_status("Copying result to user content completed",forcewrite=True)
 
         
     
-    def copy_result_to_usercontent(self):
+    def copy_result_to_usercontent(self, mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.load_dataset_mode
+        if mode == 1:
+            uc_folder = self.training_config["usercontent_folder_custom"]
+            res_folder = self.training_config["result_folder_custom"]
+        else :
+            uc_folder = self.training_config["usercontent_folder"]
+            res_folder = self.training_config["result_folder"]
+
+
         self.sysmane.write_status("Copying result to user content", stage="Copying result to user content", percentage=0)
         # Use this for upgrade from uuid to hashlib md5
         # Copy all images in {storepath}/result to {storepath}/uc/{label}
             #{storepath}/result/{prediction}--{uuid}.png => {storepath}/uc/{label}/{uuid}.png
-        for filename in os.listdir("{}/result".format(self.store_path)):
+        for filename in os.listdir("{}/{}".format(self.store_path, res_folder)):
             prediction = filename.split("--")[0]
             uuid = filename.split("--")[1].split(".")[0]
-            os.makedirs("{}/uc/{}".format(self.store_path, prediction), exist_ok=True)
-            shutil.copyfile("{}/result/{}".format(self.store_path, filename), "{}/uc/{}/{}.png".format(self.store_path, prediction, uuid))
+            os.makedirs("{}/{}/{}".format(self.store_path, uc_folder, prediction), exist_ok=True)
+            shutil.copyfile("{}/{}/{}".format(self.store_path, res_folder, filename), "{}/{}/{}/{}.png".format(self.store_path, uc_folder, prediction, uuid))
         # Delete all images in {storepath}/result
-        shutil.rmtree("{}/result".format(self.store_path))
-        os.makedirs("{}/result".format(self.store_path), exist_ok=True)
+        shutil.rmtree("{}/{}".format(self.store_path, res_folder))
+        os.makedirs("{}/{}".format(self.store_path, res_folder), exist_ok=True)
         self.sysmane.write_status("Copying result to user content completed", stage="Copying result to user content", percentage=100)
 
             

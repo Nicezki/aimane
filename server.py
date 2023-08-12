@@ -201,7 +201,7 @@ def predict():
     image = request.files['image']
 
     # Make prediction
-    result = aimane.test_model_live(image)
+    result = aimane.test_model(image)
 
     # Check if the result is string then return error message
     if isinstance(result, str):
