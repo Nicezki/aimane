@@ -27,7 +27,7 @@ class AiMane:
         # 0 = MNIST 0-9 (10 classes)
         # 1 = kaggle A-Z (26 classes)
         self.datasetname_2nd = "az_handwritten_tfrecord_28x28"
-        self.load_dataset_mode = 0
+        self.load_dataset_mode = 1
         self.training_config = {
             "use_gpu" : True,
             "epochs": 30,
@@ -56,6 +56,8 @@ class AiMane:
             "countfile_custom" : "count_custom.txt",
             "result_folder" : "result",
             "result_folder_custom" : "result_2nd",
+            "dataset_custom_url" : "https://github.com/AiManeS/dataset_store/releases/download/test-release/az_handwritten_tfrecord_28x28.zip",
+            "dataset_custom_name" : None,
         }
         self.model_name = "model.h5"
         self.model_name_custom = "model_2nd.h5"
@@ -101,12 +103,20 @@ class AiMane:
             self.running_config["usercontent_valid"] = False
 
 
-        if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
-            self.prediction_result["class_names"] = self.training_config["uc_class_names"]
-            self.prediction_result["classes"] = self.training_config["uc_classes"]
+        if(self.load_dataset_mode == 1):
+            if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
+                self.prediction_result["class_names"] = self.training_config["uc_class_names_custom"]
+                self.prediction_result["classes"] = self.training_config["uc_classes_custom"]
+            else:
+                self.prediction_result["class_names"] = self.training_config["class_names_custom"]
+                self.prediction_result["classes"] = self.training_config["classes_custom"]          
         else:
-            self.prediction_result["class_names"] = self.training_config["class_names"]
-            self.prediction_result["classes"] = self.training_config["classes"]
+            if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
+                self.prediction_result["class_names"] = self.training_config["uc_class_names"]
+                self.prediction_result["classes"] = self.training_config["uc_classes"]
+            else:
+                self.prediction_result["class_names"] = self.training_config["class_names"]
+                self.prediction_result["classes"] = self.training_config["classes"]
 
 
         # self.training_config["class_names"] = list(dict.fromkeys(self.training_config["class_names"]))
@@ -301,13 +311,16 @@ class AiMane:
         else:
             self.model = load_model("{}/model/{}".format(self.store_path, model_name))
         # Check if model is loaded
-        if self.model is None:
+        if (mode == 1 and self.model_custom is None) or (mode == 0 and self.model is None):
             self.sysmane.write_status("[ERROR] Model file is corrupted.")
             return "03"
             #"MODEL_CORRUPTED"
         # Set model_loaded to True
         self.sysmane.write_status("[INFO] Model loaded successfully.",stage="Loading model",percentage=100,forcewrite=True)
-        self.model_loaded = True
+        if mode == 1:
+            self.model_loaded_custom = True
+        else:
+            self.model_loaded = True
         # Return True
         return "00"
         #"MODEL_LOADED_SUCCESSFULLY"
@@ -581,8 +594,9 @@ class AiMane:
         if mode == 0:
             # Prepare the dataset
             (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
-            # Merge test_images and test_labels to train_images and train_labels for splitting later
-            train_images = np.concatenate((train_images, test_images))
+            # # Merge test_images and test_labels to train_images and train_labels for splitting later
+            # train_images = np.concatenate((train_images, test_images))
+            # train_labels = np.concatenate((train_labels, test_labels))
 
             self.sysmane.write_status("Dataset is being prepared. This may take a while.",stage="Preparing dataset",percentage=0)
             self.sysmane.write_status("Loading dataset at {}".format(self.get_current_time()))
@@ -591,30 +605,47 @@ class AiMane:
 
         if mode == 1:
             # Prepare the dataset
-            self.sysmane.write_status("Dataset is being prepared. This may take a while.",stage="Preparing dataset",percentage=0)
-            self.sysmane.write_status("Loading dataset at {}".format(self.get_current_time()))
-            self.sysmane.write_status("Loading dataset", 0)
+            self.sysmane.write_status("Custom Dataset is being prepared. This may take a while.",stage="Preparing dataset",percentage=0)
+            self.sysmane.write_status("Loading custom dataset at {}".format(self.get_current_time()))
+            self.sysmane.write_status("Loading custom dataset", 0)
             # Load the dataset from the TFRecord files.
+            prepareresult = self.download_dataset_from_url(self.training_config['dataset_custom_url'], self.training_config['dataset_custom_name'])
+            if not prepareresult:
+                # Return error if dataset is not loaded
+                self.sysmane.write_status("[ERROR] Dataset can't not be prepared! Please check your dataset URL and name.")
+                return "Dataset can't not be prepared! Please check your dataset URL and name."
+            
             train_images, train_labels, test_images, test_labels = self.load_az_dataset()
             # Convert the images to numpy arrays.
             train_images = np.array(train_images)
             train_labels = np.array(train_labels)
-            test_images = np.array(test_images)
-            test_labels = np.array(test_labels)
+            validate_images = np.array(test_images)
+            validate_labels = np.array(test_labels)
+
+
             #Set training config
             self.training_config["classes"] = self.training_config["classes_custom"]
             self.training_config["class_names"] = self.training_config["class_names_custom"]
-            #Merge test_images and test_labels to train_images and train_labels for splitting later
-            train_images = np.concatenate((train_images, test_images), axis=0)
+            # # #Merge test_images and test_labels to train_images and train_labels for splitting later
+            # train_images = np.concatenate((train_images, validate_images), axis=0)
+            # train_labels = np.concatenate((train_labels, validate_labels), axis=0)
+
+
+
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
             
+        # Check if dataset is loaded
+        if train_images is None:
+            self.sysmane.write_status("[ERROR] Dataset can't not be prepared! After loading dataset, train_images is None. Please check your dataset URL and name.")
+            return "Dataset can't not be prepared! Please check your dataset URL and name."
+        else:
+            self.sysmane.write_status("[OK] Dataset is loaded.")
+            self.sysmane.write_status("Dataset is loaded at {}".format(self.get_current_time()))
 
         # Convert the images to numpy arrays.
         train_images = np.array(train_images)
         train_labels = np.array(train_labels)
-        validate_images = np.array(validate_images)
-        validate_labels = np.array(validate_labels)
         
         # Split the training data into training and validation sets.
         self.sysmane.write_status("Splitting dataset", 0)
@@ -669,18 +700,35 @@ class AiMane:
         self.sysmane.write_status("Dataset is prepared.",stage="Preparing dataset",percentage=100,forcewrite=True)
 
 
-    def save_image(self ,image, filename):
-        self.sysmane.write_status("Converting image {} to float32...".format(filename),nowrite=True)
-        # Progrss from filename
-        self.sysmane.write_status("Normalizing image {}...".format(filename),nowrite=True)
-        image = (image / 255.0).astype(np.float32)
-        self.sysmane.write_status("Converting image {} to float32...".format(filename),nowrite=True)
-        self.sysmane.write_status("Scaling image {}...".format(filename),nowrite=True)
-        # Scale the pixel values to the range [0, 255] and convert to uint8
-        image = (image * 255).astype(np.uint8)
-        self.sysmane.write_status("Saving image {}...".format(filename),nowrite=True)
-        # Save the image
-        cv2.imwrite(filename, image)
+    def save_image(self ,image, filename, mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+
+        if mode is None:
+            mode = self.load_dataset_mode
+
+        if mode == 1:
+            self.sysmane.write_status("Scaling image {} to range 0-255...".format(filename),nowrite=True)
+            scaled_image = (image - image.min()) / (image.max() - image.min()) * 255
+            self.sysmane.write_status("Converting image {} to float32...".format(filename),nowrite=True)
+            scaled_image = np.uint8(scaled_image)
+            cv2.imwrite(filename, scaled_image)
+            
+        else:
+            self.sysmane.write_status("Converting image {} to float32...".format(filename),nowrite=True)
+            # Progrss from filename
+            self.sysmane.write_status("Normalizing image {}...".format(filename),nowrite=True)
+            image = (image / 255.0).astype(np.float32)
+            self.sysmane.write_status("Converting image {} to float32...".format(filename),nowrite=True)
+            self.sysmane.write_status("Scaling image {}...".format(filename),nowrite=True)
+            # Scale the pixel values to the range [0, 255] and convert to uint8
+            image = (image * 255).astype(np.uint8)
+            self.sysmane.write_status("Saving image {}...".format(filename),nowrite=True)
+            # Save the image
+            cv2.imwrite(filename, image)
+
+
+
         # Check if the image is saved.
         if os.path.exists(filename):
             self.sysmane.write_status("[OK] Image {} is saved.".format(filename),nowrite=True)
@@ -697,6 +745,7 @@ class AiMane:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
             uc_folder = self.training_config["usercontent_folder_custom"]
+            
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
@@ -754,6 +803,8 @@ class AiMane:
         if mode == 1:
             self.training_config["classes"] = self.training_config["classes_custom"]
             self.training_config["class_names"] = self.training_config["class_names_custom"]
+            training_classes = self.training_config["classes_custom"]
+
             if usercontent:
                 training_classes = self.training_config["uc_classes_custom"]
 
@@ -829,14 +880,21 @@ class AiMane:
         if not os.path.exists(f"{self.store_path}/cache"):
             os.makedirs(f"{self.store_path}/cache")
 
+
+        #Check if dataset is already prepared
+        if os.path.exists(f"{self.dataset_path}/dataset/{name}" or os.path.exists(f"{self.dataset_path}/dataset/{filename}")):
+            if(os.path.exists(f"{self.dataset_path}/{self.training_config['countfile_custom']}")):
+                self.sysmane.write_status(f"[INFO] Dataset {filename} already exists in dataset folder! Dataset is prepared",percentage=100)
+            return True
+
         #Check if extracted file already exists
         if os.path.exists(f"{self.store_path}/dataset/{name}") or os.path.exists(f"{self.store_path}/dataset/{filename}"):
-            self.sysmane.write_status(f"[INFO] File {filename} already exists")
+            self.sysmane.write_status(f"[INFO] Dataset {filename} already exists",percentage=100)
             return True
 
         #Check if file already exists and valid zip file
         if os.path.exists(f"{self.store_path}/cache/{filename}.zip") and zipfile.is_zipfile(f"{self.store_path}/cache/{filename}.zip"):
-            self.sysmane.write_status(f"[INFO] File {filename} already exists and valid zip file, Using cache~!")
+            self.sysmane.write_status(f"[INFO] Dataset Archive File {filename} already exists and valid zip file, Using cache~!",percentage=25)
             cache_found = True
         else:
             cache_found = False
@@ -853,52 +911,118 @@ class AiMane:
             ) as progress_bar:
                 for data in r.iter_content(block_size):
                     file.write(data)
-                    #self.sysmane.write_status(f"Downloading {progress_bar.n}/{progress_bar.total} {progress_bar.n/progress_bar.total*100:.2f}% ...")
+                    self.sysmane.write_status(f"Downloading {progress_bar.n}/{progress_bar.total} {progress_bar.n/progress_bar.total*100:.2f}%", percentage=int(progress_bar.n/progress_bar.total*100), nowrite=True)
                     progress_bar.update(len(data))
 
             
-            self.sysmane.write_status(f"[INFO] Download complete. Saving at cache folder")
+            self.sysmane.write_status(f"[INFO] Download complete. Saving at cache folder",percentage=40,nowrite=True)
 
         # Create cache folder
         if not os.path.exists(f"{self.store_path}/dataset"):
             os.makedirs(f"{self.store_path}/dataset")
         
         # Extract file
-        self.sysmane.write_status(f"[INFO] Extracting file {filename}.zip")
+        self.sysmane.write_status(f"[INFO] Extracting file {filename}.zip", percentage=50,nowrite=True)
 
 
         # Unzip file
         # Remove dataset/temp folder if exists
         if os.path.exists(f"{self.store_path}/dataset/temp"):
-            os.system(f"rm -rf {self.store_path}/dataset/temp")
+            self.sysmane.write_status(f"[INFO] Removing old temp folder", percentage=50,nowrite=True)
+            # Remove ignore files
+            shutil.rmtree(f"{self.store_path}/dataset/temp")
         # Create dataset/temp folder
         os.makedirs(f"{self.store_path}/dataset/temp")
         # Extract file
         with zipfile.ZipFile(f"{self.store_path}/cache/{filename}.zip", 'r') as zip_ref:
             zip_ref.extractall(f"{self.store_path}/dataset/temp")
+        #     self.sysmane.write_status(f"[INFO] Extracting file {filename}.zip", percentage=50,nowrite=True)
+        
+        # Extract file using ZipExtractor(zip_path, store_path)
+        # self.sysmane.write_status(f"[INFO] Extracting file {filename}.zip", percentage=50,nowrite=True)
+        # ZipExtractor(f"{self.store_path}/cache/{filename}.zip", f"{self.store_path}/dataset/temp",self)
+
+
+            # Percentage
         # Move file
         # If extracted file have /test and /train folder in root
         # that mean folder doesn't have name of the dataset
         # add name parameter to folder name before moving
         # Example: dataset/temp/test -> dataset/{datasetname}/test and dataset/temp/train -> dataset/{datasetname}/train
+
         if os.path.exists(f"{self.store_path}/dataset/temp/test") and os.path.exists(f"{self.store_path}/dataset/temp/train"):
-            os.rename(f"{self.store_path}/dataset/temp/test", f"{self.store_path}/dataset/{filename}/test")
-            os.rename(f"{self.store_path}/dataset/temp/train", f"{self.store_path}/dataset/{filename}/train")
-        #If extracted file have only 1 folder in root and that folder is the name of the dataset
-        #move that folder to dataset folder
-        elif os.path.exists(f"{self.store_path}/dataset/temp/{filename}"):
-            os.rename(f"{self.store_path}/dataset/temp/{filename}", f"{self.store_path}/dataset/{filename}")
-        #If extracted file have only 1 folder in root and that folder is not the name of the dataset
-        #move that folder to dataset folder and rename it to the name of the dataset
-        elif os.path.exists(f"{self.store_path}/dataset/temp/{name}"):
-            os.rename(f"{self.store_path}/dataset/temp/{name}", f"{self.store_path}/dataset/{name}")
-        #If extracted file have more than 1 folder in root
-        #move all folder to dataset folder and rename it to the name of the dataset
+            self.sysmane.write_status(f"[INFO] Moving file {filename} (With No dataset name found)", percentage=75)
+            destination_folder = os.path.join(self.dataset_path, "dataset", filename)
+            os.makedirs(destination_folder, exist_ok=True)
+            if not os.path.exists(os.path.join(destination_folder, "test")):
+                shutil.move(f"{self.store_path}/dataset/temp/test", os.path.join(destination_folder, "test"))
+            else:
+                for file in os.listdir(f"{self.store_path}/dataset/temp/test"):
+                    if not os.path.exists(os.path.join(destination_folder, "test", file)):
+                        shutil.move(f"{self.store_path}/dataset/temp/test/{file}", os.path.join(destination_folder, "test"))
+                    else:
+                        self.sysmane.write_status(f"[INFO] File {file} already exists in dataset/{filename}/test", percentage=90)
+            if not os.path.exists(os.path.join(destination_folder, "train")):
+                shutil.move(f"{self.store_path}/dataset/temp/train", os.path.join(destination_folder, "train"))
+            else:
+                for file in os.listdir(f"{self.store_path}/dataset/temp/train"):
+                    if not os.path.exists(os.path.join(destination_folder, "train", file)):
+                        shutil.move(f"{self.store_path}/dataset/temp/train/{file}", os.path.join(destination_folder, "train"))
+                    else:
+                        self.sysmane.write_status(f"[INFO] File {file} already exists in dataset/{filename}/train", percentage=90)
+                
+            self.sysmane.write_status(f"[INFO] Moving file {filename} from temp to dataset/{filename} (With No dataset name found)", percentage=100,forcewrite=True)
+
+
+        elif filename != "" and filename != None and os.path.exists(f"{self.store_path}/dataset/temp/{filename}"):
+            self.sysmane.write_status(f"[INFO] Moving file {filename} from temp to dataset/{filename} (By filename)", percentage=75)
+            destination_folder = os.path.join(self.dataset_path, "dataset", filename)
+            os.makedirs(destination_folder, exist_ok=True)
+            if not os.path.exists(destination_folder):
+                shutil.move(f"{self.store_path}/dataset/temp/{filename}", destination_folder)
+            else:
+                for file in os.listdir(f"{self.store_path}/dataset/temp/{filename}"):
+                    if not os.path.exists(os.path.join(destination_folder, file)):
+                        shutil.move(f"{self.store_path}/dataset/temp/{filename}/{file}", destination_folder)
+                    else:
+                        self.sysmane.write_status(f"[INFO] File {file} already exists in dataset/{filename}", percentage=90)
+            self.sysmane.write_status(f"[INFO] Moving file {filename} from temp to dataset/ (By filename: {filename})", percentage=100, forcewrite=True)
+
+
+        elif name != "" and name != None and os.path.exists(f"{self.store_path}/dataset/temp/{name}"):
+            self.sysmane.write_status(f"[INFO] Moving file {filename} from temp to dataset/{name} (By provided name)", percentage=75)
+            destination_folder = os.path.join(self.dataset_path, "dataset")
+            os.makedirs(destination_folder, exist_ok=True)
+            if not os.path.exists(destination_folder):
+                shutil.move(f"{self.store_path}/dataset/temp/{name}", destination_folder)
+            else:
+                for file in os.listdir(f"{self.store_path}/dataset/temp/{name}"):
+                    if not os.path.exists(os.path.join(destination_folder, file)):
+                        shutil.move(os.path.join(f"{self.store_path}/dataset/temp/{name}", file), destination_folder)
+                    else:
+                        self.sysmane.write_status(f"[INFO] File {file} already exists in dataset folder. Skipping", percentage=80, nowrite=True)
+                    
+            self.sysmane.write_status(f"[INFO] Moving file {filename} from temp to dataset (By provided name: {name})", percentage=100, nowrite=True, forcewrite=True)
+
         else:
             for folder in os.listdir(f"{self.store_path}/dataset/temp"):
-                os.rename(f"{self.store_path}/dataset/temp/{folder}", f"{self.store_path}/dataset/{filename}/{folder}")
+                self.sysmane.write_status(f"[INFO] Moving file {filename}.zip from temp to dataset/{filename} (Multiple folders)", percentage=75)
+                destination_folder = os.path.join(self.dataset_path, "dataset", filename, folder)
+                os.makedirs(destination_folder, exist_ok=True)
+                if not os.path.exists(destination_folder):
+                    shutil.move(f"{self.store_path}/dataset/temp/{folder}", destination_folder)
+                else: 
+                    for file in os.listdir(f"{self.store_path}/dataset/temp/{folder}"):
+                        if not os.path.exists(os.path.join(destination_folder, file)):
+                            shutil.move(f"{self.store_path}/dataset/temp/{folder}/{file}", destination_folder)
+                        else:
+                            self.sysmane.write_status(f"[INFO] File {file} already exists in {destination_folder}", percentage=80)
+                
+                self.sysmane.write_status(f"[INFO] Moving file {filename}.zip from temp to dataset/{filename} (Multiple folders)", percentage=100,forcewrite=True)
+                
+                
         # Remove dataset/temp folder
-        os.rmdir(f"{self.store_path}/dataset/temp")
+        shutil.rmtree(f"{self.store_path}/dataset/temp")
         self.sysmane.write_status(f"[INFO] Removing cache file {filename} from cache folder")
         # Remove cache file
         os.remove(f"{self.store_path}/cache/{filename}.zip")
@@ -926,71 +1050,46 @@ class AiMane:
         # Load the dataset loop in the folder
         # Load /test and /train folder
         # Load /test folder
-        if os.path.exists(os.path.join(tfrecord_path, "test")):
-            #Loop files in /test folder (Example: train.000.tfrecord ~ train.999.tfrecord)
-            for tfrecord_file in os.listdir(os.path.join(tfrecord_path, "test")):
-                # Check if file is .tfrecord file
-                if tfrecord_file.endswith(".tfrecord"):
-                    self.sysmane.write_status("[Test Dataset] Loading TFRecord file {}...".format(tfrecord_file))
-                    raw_dataset = tf.data.TFRecordDataset(os.path.join(tfrecord_path, "test", tfrecord_file))
-                    # Check if the dataset is empty.
-                    if raw_dataset is None:
-                        self.sysmane.write_status("[ERROR] TFRecord file {} is empty.".format(tfrecord_file))
-                        return None, None, None, None
-                    # Iterate through the dataset.
-                    for raw_record in raw_dataset:
-                        example = tf.train.Example()
-                        example.ParseFromString(raw_record.numpy())
+        mode = ["train","test"]
+        for mode in mode:
+            if os.path.exists(os.path.join(tfrecord_path, mode)):
+                #Loop files in /test folder (Example: train.000.tfrecord ~ train.999.tfrecord)
+                for tfrecord_file in os.listdir(os.path.join(tfrecord_path, mode)):
+                    # Check if file is .tfrecord file
+                    if tfrecord_file.endswith(".tfrecord"):
+                        self.sysmane.write_status("[{} Dataset] Loading TFRecord file {}...".format(mode,tfrecord_file))
+                        raw_dataset = tf.data.TFRecordDataset(os.path.join(tfrecord_path, mode, tfrecord_file))
+                        # Check if the dataset is empty.
+                        if raw_dataset is None:
+                            self.sysmane.write_status("[ERROR] TFRecord file {} is empty.".format(tfrecord_file))
+                            return None, None, None, None
 
-                        # Modify this line to match the actual feature name in your TFRecord files
-                        image_feature = example.features.feature["image_flatten"]
+                        # Iterate through the dataset.
+                        for raw_record in raw_dataset:
+                            example = tf.train.Example()
+                            example.ParseFromString(raw_record.numpy())
 
-                        # Extract the image data from the feature
-                        image_data = image_feature.float_list.value
+                            # Modify this line to match the actual feature name in your TFRecord files
+                            image_feature = example.features.feature["image_flatten"]
 
-                        # Convert the image data to a numpy array and reshape
-                        image = np.array(image_data, dtype=np.float32)
-                        image = image.reshape((28, 28))  # Adjust the shape if needed
+                            # Extract the image data from the feature
+                            image_data = image_feature.float_list.value
 
-                        # Get the label from the example
-                        label = example.features.feature["label_int"].int64_list.value[0]
+                            # Convert the image data to a numpy array and reshape
+                            image = np.array(image_data, dtype=np.float32)
+                            image = image.reshape((28, 28))  # Adjust the shape if needed
 
-                        test_images.append(image)
-                        train_labels.append(label)
-        # Load /train folder
-        if os.path.exists(os.path.join(tfrecord_path, "train")):
-            #Loop files in /train folder (Example: train.000.tfrecord ~ train.999.tfrecord)
-            for tfrecord_file in os.listdir(os.path.join(tfrecord_path, "train")):
-                # Check if file is .tfrecord file
-                if tfrecord_file.endswith(".tfrecord"):
-                    self.sysmane.write_status("[Train Dataset] Loading TFRecord file {}...".format(tfrecord_file))
-                    raw_dataset = tf.data.TFRecordDataset(os.path.join(tfrecord_path, "train", tfrecord_file))
-                    # Check if the dataset is empty.
-                    if raw_dataset is None:
-                        self.sysmane.write_status("[ERROR] TFRecord file {} is empty.".format(tfrecord_file))
-                        return None, None, None, None
-                    # Iterate through the dataset.
-                    for raw_record in raw_dataset:
-                        example = tf.train.Example()
-                        example.ParseFromString(raw_record.numpy())
+                            # Get the label from the example
+                            label = example.features.feature["label_int"].int64_list.value[0]
+                            
+                            if mode == "train":
+                                train_images.append(image)
+                                train_labels.append(label)
+                            else:
+                                test_images.append(image)
+                                test_labels.append(label)
 
-                        # Modify this line to match the actual feature name in your TFRecord files
-                        image_feature = example.features.feature["image_flatten"]
-
-                        # Extract the image data from the feature
-                        image_data = image_feature.float_list.value
-
-                        # Convert the image data to a numpy array and reshape
-                        image = np.array(image_data, dtype=np.float32)
-                        image = image.reshape((28, 28))  # Adjust the shape if needed
-
-                        # Get the label from the example
-                        label = example.features.feature["label_int"].int64_list.value[0]
-
-                        train_images.append(image)
-                        train_labels.append(label)
-
-                        return train_images, train_labels, test_images, test_labels
+            return train_images, train_labels, test_images, test_labels
 
 
 
@@ -998,9 +1097,9 @@ class AiMane:
         # Path: {dataset_path}/dataset/{dataset_name}
         # Check if the dataset is prepared and have dataset in it. 
 
-        if not os.path.exists(self.dataset_path) or not os.path.exists("{}/dataset".format(self.dataset_path)) or not os.path.exists("{}/dataset/{}".format(self.dataset_path, datasetname)):
-            self.sysmane.write_status("[ERROR] A-Z Dataset is not prepared.")
-            return "A-Z Dataset is not prepared."
+        if not os.path.exists(self.store_path) or not os.path.exists("{}/dataset".format(self.store_path)):
+            self.sysmane.write_status("[ERROR] A-Z Dataset is not downloaded or prepared.")
+            return "A-Z Dataset is not downloaded or prepared."
         path = os.path.join(self.dataset_path, "dataset")
         # Load the dataset
         data = self.load_tfrecord(path, self.datasetname_2nd)
@@ -1199,8 +1298,20 @@ class AiMane:
             mode = self.load_dataset_mode
         if mode == 1:
             save_folder = self.training_config["result_folder_custom"]
+            if self.training_config["usercontent"]:
+                self.training_config["classes"] = self.training_config["uc_classes_custom"]
+                self.training_config["class_names"] = self.training_config["uc_class_names_custom"]
+            else:
+                self.training_config["classes"] = self.training_config["classes_custom"]
+                self.training_config["class_names"] = self.training_config["class_names_custom"]
         else :
             save_folder = self.training_config["result_folder"]
+            if self.training_config["usercontent"]:
+                self.training_config["classes"] = self.training_config["uc_classes"]
+                self.training_config["class_names"] = self.training_config["uc_class_names"]
+            else:
+                self.training_config["classes"] = 10
+                self.training_config["class_names"] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 
         load_result = self.load_model()
@@ -1494,76 +1605,94 @@ class VerboseCallback(Callback):
                 self.aimane.write_model_acc(logs["accuracy"])
                 self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Training model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
 
-    def handleModelUpload(self, model):
-        # Handle the model upload by flask
-        # Save the model to {storepath}/model/store/{md5}.h5
-        # Save the model to {storepath}/model/store/{md5}.json
+class ZipExtractor:
+    def __init__(self, zip_path, store_path, sysmane):
+        self.zip_path = zip_path
+        self.store_path = store_path
+        self.sysmane = sysmane
 
-        # Get the md5 hash of the model
-        md5 = self.aimane.get_model_md5(model)
-        # Save the model to {storepath}/model/store/{md5}.h5
-        model.save("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
-        # Save the model to {storepath}/model/store/{md5}.json
-        with open("{}/model/store/{}.json".format(self.aimane.running_config["storepath"], md5), "w") as f:
-            f.write(model.to_json())
-        # Return the md5 hash
-        return md5
+    def extract_with_progress(self):
+        with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
+            total_files = len(zip_ref.namelist())
+            
+            # Use tqdm to create a progress bar
+            with tqdm(total=total_files, unit='file') as pbar:
+                for file_info in zip_ref.infolist():
+                    zip_ref.extract(file_info, os.path.join(self.store_path, 'dataset', 'temp'))
+                    pbar.update(1)
+                    SysMane.write_status("Extracting ZIP dataset: {}".format(file_info.filename), percentage= "{:.3f}".format(pbar.n / total_files * 100))
+
+
+    # def handleModelUpload(self, model):
+    #     # Handle the model upload by flask
+    #     # Save the model to {storepath}/model/store/{md5}.h5
+    #     # Save the model to {storepath}/model/store/{md5}.json
+
+    #     # Get the md5 hash of the model
+    #     md5 = self.aimane.get_model_md5(model)
+    #     # Save the model to {storepath}/model/store/{md5}.h5
+    #     model.save("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
+    #     # Save the model to {storepath}/model/store/{md5}.json
+    #     with open("{}/model/store/{}.json".format(self.aimane.running_config["storepath"], md5), "w") as f:
+    #         f.write(model.to_json())
+    #     # Return the md5 hash
+    #     return md5
     
 
 
-    def getModelNames(self):
-        # Get all the model names in the store
-        # Return a list of model names in JSON format
-        # Example: [{"name": "model1", "md5": "1234567890"}, {"name": "model2", "md5": "0987654321"}]
-        # Get all the files in the store
-        files = os.listdir("{}/model/store".format(self.aimane.running_config["storepath"]))
-        # Create a list to store the model names
-        models = []
-        # Loop through all the files
-        for file in files:
-            # If the file is a h5 file
-            if file.endswith(".h5"):
-                # Get the md5 hash of the model
-                md5 = file.replace(".h5", "")
-                # Open the json file
-                with open("{}/model/store/{}.json".format(self.aimane.running_config["storepath"], md5), "r") as f:
-                    # Read the json file
-                    model = json.loads(f.read())
-                    # Append the model name and md5 hash to the list
-                    models.append({"name": model["name"], "md5": md5})
-        # Return the list
-        return models
+    # def getModelNames(self):
+    #     # Get all the model names in the store
+    #     # Return a list of model names in JSON format
+    #     # Example: [{"name": "model1", "md5": "1234567890"}, {"name": "model2", "md5": "0987654321"}]
+    #     # Get all the files in the store
+    #     files = os.listdir("{}/model/store".format(self.aimane.running_config["storepath"]))
+    #     # Create a list to store the model names
+    #     models = []
+    #     # Loop through all the files
+    #     for file in files:
+    #         # If the file is a h5 file
+    #         if file.endswith(".h5"):
+    #             # Get the md5 hash of the model
+    #             md5 = file.replace(".h5", "")
+    #             # Open the json file
+    #             with open("{}/model/store/{}.json".format(self.aimane.running_config["storepath"], md5), "r") as f:
+    #                 # Read the json file
+    #                 model = json.loads(f.read())
+    #                 # Append the model name and md5 hash to the list
+    #                 models.append({"name": model["name"], "md5": md5})
+    #     # Return the list
+    #     return models
     
 
-    def getModel(self, md5):
-        # Get the model by md5 hash
-        # Return the model
-        # Load the model from {storepath}/model/store/{md5}.h5
-        model = load_model("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
-        # Return the model
-        return model
+    # def getModel(self, md5):
+    #     # Get the model by md5 hash
+    #     # Return the model
+    #     # Load the model from {storepath}/model/store/{md5}.h5
+    #     model = load_model("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
+    #     # Return the model
+    #     return model
     
 
-    def loadModel(self, md5):
-        # Load the model by md5 hash
-        # Return the model
-        # Load the model from {storepath}/model/store/{md5}.h5
-        model = load_model("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
-        # Return the model
-        return model
+    # def loadModel(self, md5):
+    #     # Load the model by md5 hash
+    #     # Return the model
+    #     # Load the model from {storepath}/model/store/{md5}.h5
+    #     model = load_model("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
+    #     # Return the model
+    #     return model
 
-    # TRANSFER LEARNING PART
-    # Load second model for transfer learning
-    # [Model2] -> [Model1]
+    # # TRANSFER LEARNING PART
+    # # Load second model for transfer learning
+    # # [Model2] -> [Model1]
 
-    #This is the model that will transfer from
-    def loadSecondModel(self, md5):
-        # Load the model by md5 hash
-        # Return the model
-        # Load the model from {storepath}/model/store/{md5}.h5
-        model = load_model("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
-        # Return the model
-        return model
+    # #This is the model that will transfer from
+    # def loadSecondModel(self, md5):
+    #     # Load the model by md5 hash
+    #     # Return the model
+    #     # Load the model from {storepath}/model/store/{md5}.h5
+    #     model = load_model("{}/model/store/{}.h5".format(self.aimane.running_config["storepath"], md5))
+    #     # Return the model
+    #     return model
 
 
 
