@@ -366,8 +366,11 @@ def script():
 
 
 
-# for /app/v1
+# for /app/v2
 # New AIMANE app for production
+
+# for /app/v1
+# Previous AIMANE app for production
 
 # for /app/v0
 # Old just for testing purpose app before v1 was created
@@ -382,6 +385,10 @@ def indexv0():
 @app.route('/app/v1/', methods=['GET'])
 def indexv1():
     return send_from_directory('app/frontend/v1', 'index.html')
+
+@app.route('/app/v2/', methods=['GET'])
+def indexv2():
+    return send_from_directory('app/frontend/v2', 'index.html')
 
 
 
@@ -430,6 +437,7 @@ if __name__ == '__main__':
     # This is the default setting for production
     # Professors, please use this
     # This will use waitress as the production server instead of flask
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v2/ to access the app version 2")
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v1/ to access the app version 1")
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v0/ to access the app version prototype")
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/<path> to access the api")
@@ -449,6 +457,7 @@ if __name__ == '__main__':
 else :
     # call with 
     # waitress-serve --listen=*:5000 server:server_app
+    aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v2/ to access the app version 2")
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v1/ to access the app version 1")
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/app/v0/ to access the app version prototype")
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/<path> to access the api")

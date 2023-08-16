@@ -15,25 +15,30 @@ CORS(client, resources={r"/*": {"origins": "*", "supports_credentials": True}})
 # Handle index.html
 @client.route('/')
 def index():
+    return send_from_directory('app/frontend/v2', 'index.html')
+
+# Handle v1 index.html
+@client.route('/v1/')
+def indexv1():
     return send_from_directory('app/frontend/v1', 'index.html')
+
 
 # Handle v0 index.html
 @client.route('/v0/')
 def indexv0():
     return send_from_directory('app/frontend/v0', 'index.html')
 
-
-
 @client.route('/v0/<path:path>')
 def appv0(path):
     return send_from_directory('app/frontend/v0', path)
 
-
-
-
-@client.route('/<path:path>')
+@client.route('/v1/<path:path>')
 def appv1(path):
     return send_from_directory('app/frontend/v1', path)
+
+@client.route('/<path:path>')
+def appv2(path):
+    return send_from_directory('app/frontend/v2', path)
 
 
 
@@ -66,7 +71,9 @@ if __name__ == '__main__':
     # This is the default setting for production
     # Professors, please use this
     # This will use waitress as the production server instead of flask
-    print("[CLIENT] Use http://localhost:8080/ to access the app version 1")
+
+    print("[CLIENT] Use http://localhost:8080/ to access the app version 2")
+    print("[CLIENT] Use http://localhost:8080/v1/ to access the app version 1")
     print("[CLIENT] Use http://localhost:8080/v0/ to access the app version prototype")
 
     print("AIMANE Client is started")
