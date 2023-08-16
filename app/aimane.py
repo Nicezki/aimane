@@ -26,9 +26,8 @@ class AiMane:
         # Load dataset mode
         # 0 = MNIST 0-9 (10 classes)
         # 1 = kaggle A-Z (26 classes)
-        self.datasetname_2nd = "az_handwritten_tfrecord_28x28"
-        self.load_dataset_mode = 1
         self.training_config = {
+            "model" : 1,
             "use_gpu" : True,
             "epochs": 30,
             "stop_on_acc" : 1.00,
@@ -56,8 +55,8 @@ class AiMane:
             "countfile_custom" : "count_custom.txt",
             "result_folder" : "result",
             "result_folder_custom" : "result_2nd",
-            "dataset_custom_url" : "https://github.com/AiManeS/dataset_store/releases/download/test-release/az_handwritten_tfrecord_28x28.zip",
-            "dataset_custom_name" : None,
+            "dataset_custom_name" : "az_handwritten_tfrecord_28x28",
+            "dataset_custom_url" : "https://github.com/AiManeS/dataset_store/releases/download/test-release/az_handwritten_tfrecord_28x28.zip"
         }
         self.model_name = "model.h5"
         self.model_name_custom = "model_2nd.h5"
@@ -80,6 +79,7 @@ class AiMane:
             "highest_batch" : 0,
         }
         self.prediction_result = {
+            "model": None,
             "result" : None, 
             "percentage" : None,
             "other_result" : None,
@@ -92,6 +92,8 @@ class AiMane:
         }
 
         self.sysmane.set_train_status(total_epoch=self.training_config["epochs"])
+        self.prediction_result["model"] = self.training_config["model"]
+        self.sysmane.write_status("[INFO] AIMane initialized.")
         # self.training_config["class_names"] combined with self.training_config["classes"] (merged skip duplicate)
 
         # Check if usercontent folder exists and has files
@@ -103,7 +105,7 @@ class AiMane:
             self.running_config["usercontent_valid"] = False
 
 
-        if(self.load_dataset_mode == 1):
+        if(self.training_config["model"] == 1):
             if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
                 self.prediction_result["class_names"] = self.training_config["uc_class_names_custom"]
                 self.prediction_result["classes"] = self.training_config["uc_classes_custom"]
@@ -167,7 +169,7 @@ class AiMane:
 
         return self.prediction_result
     
-    def set_training_config(self, use_gpu=None, epochs=None, stop_on_acc=None, save_image=None, save_model=None, validation_split=None, shuffle=None, usercontent=None, classes=None, class_names=None, uc_classes=None, uc_class_names=None):
+    def set_training_config(self, use_gpu=None, epochs=None, stop_on_acc=None, save_image=None, save_model=None, validation_split=None, shuffle=None, usercontent=None, classes=None, class_names=None, uc_classes=None, uc_class_names=None, model = None):
         if use_gpu is not None:
             self.training_config["use_gpu"] = use_gpu
             self.sysmane.write_status("[CONFIG] Training Config: use_gpu is now set to " + str(use_gpu))
@@ -205,6 +207,11 @@ class AiMane:
         if uc_class_names is not None:
             self.training_config["uc_class_names"] = uc_class_names
             self.sysmane.write_status("[CONFIG] Training Config: uc_class_names is now set to " + str(uc_class_names))
+        if model is not None:
+            self.change_model(model)
+            self.training_config["model"] = self.training_config["model"]
+        return self.training_config
+            
 
 
     def get_training_config (self, as_json=True):
@@ -280,7 +287,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             model_name = self.model_name_custom
         else :
@@ -325,12 +332,43 @@ class AiMane:
         return "00"
         #"MODEL_LOADED_SUCCESSFULLY"
         
-    
+
+    def change_model(self,model=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if model is None:
+            model = self.training_config["model"]
+        if model == 1 or model == "1":
+            self.training_config["model"] = 1
+            self.sysmane.write_status("[CONFIG] Training Config: You are now using custom dataset.")
+        else:
+            self.training_config["model"] = 0
+            self.sysmane.write_status("[CONFIG] Training Config: You are now using MNIST dataset.")
+
+
+        if(self.training_config["model"] == 1):
+            if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
+                self.prediction_result["class_names"] = self.training_config["uc_class_names_custom"]
+                self.prediction_result["classes"] = self.training_config["uc_classes_custom"]
+            else:
+                self.prediction_result["class_names"] = self.training_config["class_names_custom"]
+                self.prediction_result["classes"] = self.training_config["classes_custom"]          
+        else:
+            if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
+                self.prediction_result["class_names"] = self.training_config["uc_class_names"]
+                self.prediction_result["classes"] = self.training_config["uc_classes"]
+            else:
+                self.prediction_result["class_names"] = self.training_config["class_names"]
+                self.prediction_result["classes"] = self.training_config["classes"]
+
+
+
+
     def check_dataset(self,mode=None):
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
@@ -439,7 +477,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
 
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
@@ -473,7 +511,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
@@ -510,7 +548,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             countfile = self.training_config["countfile_custom"]
         else :
@@ -555,7 +593,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
 
         save_folder_train_pre = self.training_config["save_folder_train_pre"]
         save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
@@ -705,7 +743,7 @@ class AiMane:
         # Mode 1: TFRecord dataset
 
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
 
         if mode == 1:
             self.sysmane.write_status("Scaling image {} to range 0-255...".format(filename),nowrite=True)
@@ -740,7 +778,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
@@ -799,7 +837,7 @@ class AiMane:
         training_classes = 10
     
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             self.training_config["classes"] = self.training_config["classes_custom"]
             self.training_config["class_names"] = self.training_config["class_names_custom"]
@@ -824,7 +862,7 @@ class AiMane:
 
 
         for i in range(training_classes):
-            progress = int((i+1)/self.training_config["classes"]*100)
+            progress = int((i+1)/training_classes*100)
             #Check if the directory exists.
             if not os.path.exists("{}/{}".format(path, i)):
                 self.sysmane.write_status("[ERROR] Directory {}/{} does not exist.".format(path, i))
@@ -1102,7 +1140,7 @@ class AiMane:
             return "A-Z Dataset is not downloaded or prepared."
         path = os.path.join(self.dataset_path, "dataset")
         # Load the dataset
-        data = self.load_tfrecord(path, self.datasetname_2nd)
+        data = self.load_tfrecord(path, self.training_config["dataset_custom_name"])
         if data is None:
             return None, None, None, None
         else:
@@ -1115,7 +1153,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
@@ -1168,7 +1206,7 @@ class AiMane:
 
     def train_model(self, train_images, train_labels,mode=None):
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             classes = self.training_config["uc_classes_custom"] 
             model_name = self.model_name_custom
@@ -1246,7 +1284,7 @@ class AiMane:
     #     # Mode 0: MNIST dataset
     #     # Mode 1: TFRecord dataset
     #     if mode is None:
-    #         mode = self.load_dataset_mode
+    #         mode = self.training_config["model"]
 
         
     #     self.sysmane.write_status("Testing model", stage="Testing model", percentage=0)
@@ -1295,7 +1333,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             save_folder = self.training_config["result_folder_custom"]
             if self.training_config["usercontent"]:
@@ -1387,7 +1425,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             save_folder = self.training_config["result_folder_custom"]
         else :
@@ -1402,7 +1440,7 @@ class AiMane:
                 # Remove the file
                 os.remove("{}/{}/{}--{}.png".format(self.store_path, save_folder, prediction, uuid))
                 return False
-            os.rename("{}/{}/{}--{}.png".format(self.store_path, save_folder, prediction, uuid), "{}/result/{}--{}.png".format(self.store_path, new_prediction, uuid))
+            os.rename("{}/{}/{}--{}.png".format(self.store_path, save_folder, prediction, uuid), "{}/{}/{}--{}.png".format(self.store_path, save_folder, new_prediction, uuid))
             self.sysmane.write_status("Prediction defined to {}".format(new_prediction), stage="Prediction", percentage=0)
             return True
         else:
@@ -1423,7 +1461,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             uc_folder = self.training_config["usercontent_folder_custom"]
             res_folder = self.training_config["result_folder_custom"]
@@ -1473,7 +1511,7 @@ class AiMane:
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         if mode is None:
-            mode = self.load_dataset_mode
+            mode = self.training_config["model"]
         if mode == 1:
             uc_folder = self.training_config["usercontent_folder_custom"]
             res_folder = self.training_config["result_folder_custom"]

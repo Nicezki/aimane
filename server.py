@@ -313,6 +313,11 @@ def setconfig():
         if stopacc != None and stopacc != "" and stopacc.replace(".", "", 1).isdigit() and float(stopacc) >= 0 and float(stopacc) <= 1:
             stopacc = float(stopacc)
             aimane.set_training_config(stop_on_acc=stopacc)
+
+    if request.args.get('model') != None:
+        model = request.args.get('model')
+        if model != None and model != "":
+            aimane.set_training_config(model=model)
     return aimane.get_training_config()
 
 
@@ -415,7 +420,8 @@ if __name__ == '__main__':
     # Professors need to have SSL and put ssl files in app/ssl folder
     # Professors can generate SSL certificate using openssl or use certbot to get free SSL certificate
 
-    #app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/site-cert.pem', 'app/ssl/site-key.pem'))
+    # Worker threads are used to handle multiple requests at the same time = 32
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context=('app/ssl/site-cert.pem', 'app/ssl/site-key.pem'), threaded=True, processes=1)
     
 
     ####### FOR PRODUCTION ########
@@ -429,8 +435,16 @@ if __name__ == '__main__':
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/<path> to access the api")
     aimane.sysmane.write_status("[SERVER] Use http://localhost:5000/api/sse/<path> to access the Server sent event api")
     aimane.sysmane.write_status("[SERVER] Server is started")
-    from waitress import serve
-    serve(app, host='0.0.0.0', port=5000, threads=16)
+    # from waitress import serve
+    # serve(app, host='0.0.0.0', port=5000, threads=16)
+
+    # Run nginx as reverse proxy to this server
+    # N:\Miri\Programs\nginx-1.25.1>nginx.exe
+
+
+    
+
+
 
 else :
     # call with 

@@ -884,6 +884,7 @@ class AIManeUI {
             this.connected = false;
         }
 
+        // Cancel current connection to prevent duplicate connection
         this.source = await (new EventSource(sse_url));
         // Check SSE connection
         this.source.onopen = (e) => {
@@ -1269,4 +1270,8 @@ class AIManeUI {
 }
 
 
-  const aiManeUI = new AIManeUI();
+if (window.location.href.includes("post.php")) {
+    console.log("[INFO] AIMane not loaded in this page because this is development environment");
+}else{
+    const aiManeUI = new AIManeUI();
+}

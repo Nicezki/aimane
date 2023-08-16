@@ -1,5 +1,3 @@
-// app.js
-
 class AIManeUI {
     constructor() {
         this.serverProtocol = "https";
@@ -20,9 +18,12 @@ class AIManeUI {
         this.createdEpochProgressBox = false;
         this.correctPredictionButtonCreated = false;
         this.canvas = null;
+        this.on_selectserver = true;
+        this.lastmodel = null;
         this.ui_elements = {
             "aimane-main" : document.querySelector(".aimane-main"), //.style.display = "Flex" or "None"
                 "logmane": document.querySelector(".logmane"), //.className = "fas fa-file-download"
+                "box-log" : document.querySelector(".log-box"), //.style.display = "Flex" or "None"
                     "lmn-icon" : document.querySelector(".lmn-icon div div div i"), //.textContent = "Loading Dataset"
                     "lmn-title" : document.querySelector(".lmn-title div h2"), //.textContent = "Saving validate image"
                     "lmn-subtitle" : document.querySelector(".lmn-subtitle div h5"), //.textContent
@@ -46,14 +47,23 @@ class AIManeUI {
                     "btn-configtrain" : document.querySelector(".btn-configtrain"), //Trigger click event
                     "smn-training-config-box" : document.querySelector(".smn-training-config-box"), //.style.display = "Flex" or "None"
 
-                        "conf-cur-epoch" : document.querySelector(".conf-cur-epoch div h6"), //.textContent = "Current: 25"
-                        "form-field-epoch" : document.querySelector("#form-field-epoch"), // Text Field
+                        "conf-cur-facc" : document.querySelector(".conf-cur-facc div h6"), //.textContent = "Current: 0.0000"
+                        "form-field-facc" : document.querySelector("#form-field-facc"), // Text Field
                         "conf-cur-uc" : document.querySelector(".conf-cur-uc div h6"), // .textContent = "Current: true"
                         "form-field-uc" : document.querySelector("#form-field-uc"), // Dropdown
                         "conf-cur-saveimg" : document.querySelector(".conf-cur-saveimg div h6"), // .textContent = "Current: true"
                         "form-field-saveimg" : document.querySelector("#form-field-img"), // Dropdown
                         "conf-cur-savemodel" : document.querySelector(".conf-cur-savemodel div h6"), // .textContent = "Current: true"
                         "form-field-savemodel" : document.querySelector("#form-field-model"), // Dropdown
+
+                    //Advanced config
+                        "conf-cur-epoch" : document.querySelector(".conf-cur-epoch div h6"), //.textContent = "Current: 25"
+                        "form-field-epoch" : document.querySelector("#form-field-epoch"), // Text Field
+                        "conf-cur-selmodel" : document.querySelector(".conf-cur-selmodel div h6"), // .textContent = "Current: true"
+                        "form-field-selmodel" : document.querySelector("#form-field-selmodel"), // Dropdown
+
+
+
                 "resultmane" : document.querySelector(".resultmane"),
                     "rmn-icon" : document.querySelector(".rmn-icon div div div i"), //.className = "fas fa-atom"
                     "rmn-title" : document.querySelector(".rmn-title div h3"), //.textContent = "Prediction​"
@@ -85,23 +95,18 @@ class AIManeUI {
         };
         this.server_list = [
             {
-                "name": "Nicezki Home Server",
+                "name": "localhost:5000 (Use this, Prof.)",
+                "address": "localhost",
+                "port": "5000",
+                "protocol": "http"
+            },
+            {
+                "name": "Nicezki HTTPS (For Dev)",
                 "address": "miri.network.nicezki.com",
                 "port": "5000",
                 "protocol": "https"
-            },
-            {
-                "name": "192.168.1.2:5000",
-                "address": "192.168.1.2",
-                "port": "5000",
-                "protocol": "https"
-            },
-            {
-                "name": "localhost:5000",
-                "address": "localhost",
-                "port": "5000",
-                "protocol": "https"
             }
+
         ];
 
         this.init();
@@ -164,7 +169,7 @@ class AIManeUI {
     }
 
     init() {
-        this.consoleLog("「AIMANE」 by Nattawut Manjai-araya  v1.0.0");
+        this.consoleLog("「AIMANE」 by Nattawut Manjai-araya  v1.1.0");
         // Init UI
 
         // Prepare server list
@@ -176,6 +181,7 @@ class AIManeUI {
 
         // Setup canvas
         this.setupDrawCanvas();
+        this.logmane("Application started", "Ready..", 0, "server");
     }
 
     buttonTriggerSetup() {
@@ -239,6 +245,15 @@ class AIManeUI {
             this.setTrainConfig("model", this.ui_elements["form-field-savemodel"].value);
         });
 
+        this.ui_elements["form-field-facc"].addEventListener("change", () => {
+            this.consoleLog("Finish Acc changed to " + this.ui_elements["form-field-facc"].value);
+            this.setTrainConfig("facc", this.ui_elements["form-field-facc"].value);
+        });
+
+        this.ui_elements["form-field-selmodel"].addEventListener("change", () => {
+            this.consoleLog("Selected model changed to " + this.ui_elements["form-field-selmodel"].value);
+            this.setTrainConfig("model", this.ui_elements["form-field-selmodel"].value);
+        });
     }
 
     toggleTrainConfig() {
@@ -261,21 +276,7 @@ class AIManeUI {
         }).then((response) => {
             if (response.status == 200) {
                 response.json().then((data) => {
-                    this.ui_elements["conf-cur-epoch"].textContent = "Current: " + data["epochs"];
-                    this.ui_elements["form-field-epoch"].value = data["epochs"];
-                    this.ui_elements["conf-cur-uc"].textContent = "Current: " + data["usercontent"];
-                    this.ui_elements["form-field-uc"].value = data["usercontent"];
-                    this.ui_elements["conf-cur-saveimg"].textContent = "Current: " + data["save_image"];
-                    this.ui_elements["form-field-saveimg"].value = data["save_image"];
-                    this.ui_elements["conf-cur-savemodel"].textContent = "Current: " + data["save_model"];
-                    this.ui_elements["form-field-savemodel"].value = data["save_model"];
-
-                    if (data["save_image"] == "false" ||  data["save_image"] == 0 || data["save_image"] == false) {
-                        this.hideElement("rmn-btn-wrong");
-                        this.hideElement("rmn-teachbox");
-                    }else{
-                        this.showElement("rmn-btn-wrong");
-                        }
+                    this.configCurrentShow(data);
 
                 });
             }
@@ -296,22 +297,7 @@ class AIManeUI {
         }).then((response) => {
             if (response.status == 200) {
                 response.json().then((data) => {
-                    this.ui_elements["conf-cur-epoch"].textContent = "Current: " + data["epochs"];
-                    this.ui_elements["form-field-epoch"].value = data["epochs"];
-                    this.ui_elements["conf-cur-uc"].textContent = "Current: " + data["usercontent"];
-                    this.ui_elements["form-field-uc"].value = data["usercontent"];
-                    this.ui_elements["conf-cur-saveimg"].textContent = "Current: " + data["save_image"];
-                    this.ui_elements["form-field-saveimg"].value = data["save_image"];
-                    // If saving image is disabled, disable the wrong button
-                    if (data["save_image"] == "false" ||  data["save_image"] == 0 || data["save_image"] == false) {
-                        this.hideElement("rmn-btn-wrong");
-                        this.hideElement("rmn-teachbox");
-                    }else{
-                        this.showElement("rmn-btn-wrong");
-                    }
-                    this.ui_elements["conf-cur-savemodel"].textContent = "Current: " + data["save_model"];
-                    this.ui_elements["form-field-savemodel"].value = data["save_model"];
-
+                    this.configCurrentShow(data);
                     this.deleteAllEpochProgressBox();
                     this.createEpochProgressBox(data["epochs"]);
             });
@@ -320,6 +306,40 @@ class AIManeUI {
                 this.consoleLog("Set config request sent failed", "ERROR");
             }
         });
+    }
+
+
+    configCurrentShow(data){
+        this.ui_elements["conf-cur-epoch"].textContent = "Current: " + data["epochs"];
+        this.ui_elements["form-field-epoch"].value = data["epochs"];
+        // If finish acc is 0.0000 or 0 then showing Disable text instead of 0
+        let cur_facc_text = data["stop_on_acc"] == 0.0000 || data["stop_on_acc"] == 0 ? "Disable" : data["stop_on_acc"];
+        this.ui_elements["conf-cur-facc"].textContent = "Current: " + cur_facc_text;
+        this.ui_elements["form-field-facc"].value = data["stop_on_acc"];
+        this.ui_elements["conf-cur-uc"].textContent = "Current: " + data["usercontent"];
+        this.ui_elements["form-field-uc"].value = data["usercontent"];
+        this.ui_elements["conf-cur-saveimg"].textContent = "Current: " + data["save_image"];
+        this.ui_elements["form-field-saveimg"].value = data["save_image"];
+
+        // If saving image is disabled, disable the wrong button
+        if (data["save_image"] == "false" ||  data["save_image"] == 0 || data["save_image"] == false) {
+            this.hideElement("rmn-btn-wrong");
+            this.hideElement("rmn-teachbox");
+        }else{
+            this.showElement("rmn-btn-wrong");
+        }
+        this.ui_elements["conf-cur-savemodel"].textContent = "Current: " + data["save_model"];
+        this.ui_elements["form-field-savemodel"].value = data["save_model"];
+
+        if (data["model"] == 0 || data["model"] == "0") {
+            var cur_mode_text = "MNIST";
+        }
+        else if (data["model"] == 1 || data["model"] == "1") {
+            var cur_mode_text = "Custom";
+        }
+
+        this.ui_elements["conf-cur-selmodel"].textContent = "Current: " + cur_mode_text;
+        this.ui_elements["form-field-selmodel"].value = data["model"];
     }
 
                     
@@ -444,18 +464,24 @@ class AIManeUI {
         this.showElement("box-connect");
         this.hideElement("box-disconnect");
         this.hideElement("aimane-main");
+        this.hideElement("box-log");
+        this.on_selectserver = true;
     }
     
     showDisconnectScreen() {
-        this.hideElement("box-connect");
-        this.showElement("box-disconnect");
-        this.hideElement("aimane-main");
+        if (this.on_selectserver == false) {
+            this.showElement("box-disconnect");
+            this.hideElement("box-connect");
+            this.hideElement("box-log");
+        }
     }
 
     showMainScreen() {
         this.hideElement("box-connect");
         this.hideElement("box-disconnect");
         this.showElement("aimane-main");
+        this.showElement("box-log");
+        this.on_selectserver = false;
     }
 
     logmane(header = null, subheader = null, percentage = null, icon = null) {
@@ -658,7 +684,7 @@ class AIManeUI {
 
         for (var i = 0; i < classes.length; i++) {
             let newdiv = this.ui_elements["rmn-template-retrain"].cloneNode(true);
-            newdiv.className = "elementor-element elementor-element-d05252b elementor-align-center elementor-widget__width-initial btn-retrain elementor-widget elementor-widget-button btn-retrain-" + classes[i];
+            newdiv.className = "elementor-element elementor-element-d05252b elementor-align-center elementor-widget__width-initial btn-retrain elementor-widget elementor-widget-button btn-retrained btn-retrain-" + classes[i];
             newdiv.querySelector(".elementor-button-text").textContent = classes[i];
             newdiv.style.display = "flex";
             // Add property to button for easy access class
@@ -679,10 +705,12 @@ class AIManeUI {
             this.consoleLog("Correct prediction button not created", "WARN");
             return;
         }
-        // Delete all button with loop
-        for (var i = 0; i < this.ui_elements["rmn-teachclasses"].childElementCount; i++) {
-            this.ui_elements["rmn-teachclasses"].removeChild(this.ui_elements["rmn-teachclasses"].children[0]);
+        // Delete all button with loop id btn-retrain-xxx
+        var btnretrain = document.querySelectorAll(".btn-retrained");
+        for (var i = 0; i < btnretrain.length; i++) {
+            btnretrain[i].remove();
         }
+        
         this.correctPredictionButtonCreated = false;
     }
 
@@ -876,8 +904,12 @@ class AIManeUI {
             this.disconnect();
             this.connected = false;
         }
-
-        this.source = await (new EventSource(sse_url));
+        this.source = await (async () => {
+            if (this.source) {
+                this.source.close();
+            }
+            return new EventSource(sse_url);
+        })();
         // Check SSE connection
         this.source.onopen = (e) => {
             console.log("[INFO] SSE connected to " + sse_url);
@@ -889,6 +921,8 @@ class AIManeUI {
             this.connected = false;
             this.disconnect();
             this.showDisconnectScreen();
+            this.consoleLog("Connection to server at " + this.serverAddress + ":" + this.serverPort + " failed", "ERROR");
+            this.source.close();
         };
         console.log("[INFO] SSE setup at " + sse_url);
         // Listen for messages from server type: status
@@ -1036,6 +1070,17 @@ class AIManeUI {
         }
     }
 
+
+    epochProgressBox(epoch) {
+        let epochProgressBox = document.querySelector(".ep-" + epoch);
+        return epochProgressBox;
+    }
+
+    epochProgressBoxTextContent(epoch) {
+        let epochProgressBoxText = document.querySelector(".ep-" + epoch + " div div h4").textContent;
+        return epochProgressBoxText;
+    }
+
     handleTrainHistory(data,finished = false,live_acc = null) {
         // {
             // "e1": 0.8696097135543823, 
@@ -1062,6 +1107,18 @@ class AIManeUI {
             // Other will use  this.setEpochPassive(epoch, value); 
                 // Check if createdEpochProgressBox is false
                 if (!this.createdEpochProgressBox) {
+                    this.createEpochProgressBox(this.trainstatus.total_epoch);
+                }
+
+                // epoch is number so convert it to string before using it
+                if (this.epochProgressBoxTextContent(epoch) != "" + epoch) {
+                    if(this.epochProgressBoxTextContent(epoch) == ""+rvalue){
+                        this.consoleLog("[Mane Detect Debug] Epoch " + epoch + " seem to already have OK data", "SUCESS");
+                        continue;
+                    }
+
+                    this.consoleLog("[Mane Detect] Epoch " + epoch + " seem to already have data in it. Trying to resetting it...", "WARN");
+                    this.deleteAllEpochProgressBox();
                     this.createEpochProgressBox(this.trainstatus.total_epoch);
                 }
 
@@ -1231,7 +1288,12 @@ class AIManeUI {
         }
 
         if (this.correctPredictionButtonCreated == false) {
-            this.createCorrectPredictionButton(data.class_names)
+            this.createCorrectPredictionButton(data.class_names);
+        }
+
+        if (this.lastmodel != data.model && this.correctPredictionButtonCreated == true) {
+            this.deleteCorrectPredictionButton();
+            this.createCorrectPredictionButton(data.class_names);
         }
 
     }
@@ -1239,5 +1301,9 @@ class AIManeUI {
 }
 
 
-  const aiManeUI = new AIManeUI();
-  
+if (window.location.href.indexOf("elementor-preview") > -1) {
+    console.log("[INFO] AIMane not loaded in this page because this is development environment");
+}else{
+    console.log("URL: "+window.location.href);
+    const aiManeUI = new AIManeUI();
+}
