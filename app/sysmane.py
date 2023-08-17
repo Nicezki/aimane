@@ -212,9 +212,6 @@ class SysMane:
         self.train_status['history'] = {}
         self.write_status('Train history cleared', nowrite=True)
 
-        
-    
-    
 
     def get_train_status(self):
         # Get status from the self.current_status

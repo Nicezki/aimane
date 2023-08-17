@@ -185,12 +185,31 @@ def train():
     return "Training process has started."
 
 
+@app.route('/api/transferlearn', methods=['GET'])
+def transfer_learn():
+    # Start the training process in a separate task
+    aimane.transfer_learning_uc()
+    # Return progress status
+    return "Transfer learning process has started."
+
+
+@app.route('/api/combine', methods=['GET'])
+def combine():
+    # Start the training process in a separate task
+    aimane.combine_model()
+    # Return progress status
+    return "Combine process has started."
+
+
+
 @app.route('/api/trainstatus', methods=['GET'])
 def train_status():
     # Get training status
     status = aimane.get_train_status()
     # Return status
     return status
+
+
 
 
 
@@ -300,7 +319,7 @@ def setconfig():
         elif img == "false" or img == "False" or img == "0":
             img = False
         aimane.set_training_config(save_image=img)
-    if request.args.get('model') != None:
+    if request.args.get('savemodel') != None:
         model = request.args.get('model')
         if model == "true" or model == "True" or model == "1":
             model = True

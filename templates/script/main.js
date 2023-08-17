@@ -64,8 +64,6 @@ class AIManeUI {
                         "conf-cur-selmodel" : document.querySelector(".conf-cur-selmodel div h6"), // .textContent = "Current: true"
                         "form-field-selmodel" : document.querySelector("#form-field-selmodel"), // Dropdown
 
-
-
                 "resultmane" : document.querySelector(".resultmane"),
                     "rmn-icon" : document.querySelector(".rmn-icon div div div i"), //.className = "fas fa-atom"
                     "rmn-title" : document.querySelector(".rmn-title div h3"), //.textContent = "Prediction​"
@@ -80,6 +78,8 @@ class AIManeUI {
                     "rmn-btn-repair" : document.querySelector(".btn-repair"), //Trigger click event
                     "rmn-btn-rtuc" : document.querySelector(".btn-rtuc"), //Trigger click event
                     "rmn-btn-train" : document.querySelector(".btn-train"), //Trigger click event
+                    "rmn-btn-transfer" : document.querySelector(".btn-transfer"), //Trigger click event
+                    "rmn-btn-combine" : document.querySelector(".btn-combine"), //Trigger click event
                     "rmn-btn-reset" : document.querySelector(".btn-reset"), //Trigger click event
                     "rmn-btn-guess" : document.querySelector(".btn-guess"), //Trigger click event
                     "rmn-btn-wrong" : document.querySelector(".btn-wrong"), //Trigger click event
@@ -244,7 +244,7 @@ class AIManeUI {
 
         this.ui_elements["form-field-savemodel"].addEventListener("change", () => {
             this.consoleLog("Save model changed to " + this.ui_elements["form-field-savemodel"].value);
-            this.setTrainConfig("model", this.ui_elements["form-field-savemodel"].value);
+            this.setTrainConfig("savemodel", this.ui_elements["form-field-savemodel"].value);
         });
 
         this.ui_elements["form-field-facc"].addEventListener("change", () => {
@@ -261,6 +261,18 @@ class AIManeUI {
             this.consoleLog("Advanced option changed to " + this.ui_elements["form-field-advanced"].value);
             this.setAdvancedConfig(this.ui_elements["form-field-advanced"].value);
         });
+
+        this.ui_elements["rmn-btn-transfer"].addEventListener("click", () => {
+            this.aimane_transferlearning();
+        }
+        );
+
+        this.ui_elements["rmn-btn-combine"].addEventListener("click", () => {
+            this.aimane_combine();
+        }
+        );
+        
+
 
     }
 
@@ -359,6 +371,9 @@ class AIManeUI {
         else if (data["model"] == 1 || data["model"] == "1") {
             var cur_mode_text = "Custom";
         }
+        else if (data["model"] == 2 || data["model"] == "2") {
+            var cur_mode_text = "Combine";
+        }
 
         this.ui_elements["conf-cur-selmodel"].textContent = "Current: " + cur_mode_text;
         this.ui_elements["form-field-selmodel"].value = data["model"];
@@ -435,6 +450,42 @@ class AIManeUI {
             }
         });
     }
+
+
+    aimane_transferlearning() {
+        // send GET api to {server}/api/transferlearn
+        fetch(this.serverURL + "/api/transferlearn", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                this.consoleLog("Transfer learning request sent successfully", "SUCCESS");
+            }
+            else {
+                this.consoleLog("Transfer learning request sent failed", "ERROR");
+            }
+        });
+    }
+
+    aimane_combine() {
+        // send GET api to {server}/api/combine
+        fetch(this.serverURL + "/api/combine", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((response) => {
+            if (response.status == 200) {
+                this.consoleLog("Combine request sent successfully", "SUCCESS");
+            }
+            else {
+                this.consoleLog("Combine request sent failed", "ERROR");
+            }
+        });
+    }
+
 
     aimane_correctprediction(defclass) {
         // send GET api to {server}/api//api/definelastpredict?label={defclass}

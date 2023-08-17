@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input
 from keras.callbacks import Callback
 from app import sysmane as SysMane
 from PIL import Image
@@ -18,6 +18,7 @@ import io
 import zipfile
 from tqdm import tqdm
 import requests
+import random
 
 
 
@@ -41,33 +42,48 @@ class AiMane:
             "class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             "classes_custom" : 26,
             "class_names_custom" : ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
+            "classes_combine" : 38,
+            "class_names_combine" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star","Heart","A", "B", "C", "D", "E", "F", "G", "H", "I", "J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
             "uc_classes" : 12,
             "uc_class_names" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star","Heart"],
             "uc_classes_custom" : 26,
             "uc_class_names_custom" : ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
+            "uc_classes_combine" : 38,
+            "uc_class_names_combine" : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Star","Heart","A", "B", "C", "D", "E", "F", "G", "H", "I", "J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
             "save_folder_train_pre" : "training",
             "save_folder_validate_pre" : "validate",
             "save_folder_train_pre_custom" : "training_2nd",
             "save_folder_validate_pre_custom" : "validate_2nd",
             "usercontent_folder" : "uc",
             "usercontent_folder_custom" : "uc_2nd",
+            "usercontent_folder_combine" : "uc_combine",
             "countfile" : "count.txt",
             "countfile_custom" : "count_custom.txt",
             "result_folder" : "result",
             "result_folder_custom" : "result_2nd",
+            "result_folder_combine" : "result_combine",
             "dataset_custom_name" : "az_handwritten_tfrecord_28x28",
-            "dataset_custom_url" : "https://github.com/AiManeS/dataset_store/releases/download/test-release/az_handwritten_tfrecord_28x28.zip"
+            "dataset_custom_url" : "https://github.com/AiManeS/dataset_store/releases/download/test-release/az_handwritten_tfrecord_28x28.zip",
+            "trained_status_file" : "trained_status.txt",
+            "trained_status_file_custom" : "trained_status_custom.txt",
+            "trained_status_file_combine" : "trained_status_combine.txt",
         }
         self.model_name = "model.h5"
         self.model_name_custom = "model_2nd.h5"
+        self.model_name_combine = "model_combine.h5"
+        self.model_layer_name = [
+            "mnist_sequential", "az_sequential", "combine_sequential"
+        ]
         self.sysmane = SysMane.SysMane()
         self.dataset_path = self.sysmane.dataset_path
         self.store_path = self.sysmane.store_path
         self.app_path = self.sysmane.app_path
         self.model = None
         self.model_custom = None
+        self.model_combine = None
         self.model_loaded = False
         self.model_loaded_custom = False
+        self.model_loaded_combine = False
         self.model_trained = False
         self.last_model_acc = 0
         self.running_config = {
@@ -77,6 +93,12 @@ class AiMane:
             "last_prediction" : [],
             "last_prediction_uuid" : None,
             "highest_batch" : 0,
+            "trained_files" : [],
+            "trained_files_custom" : [],
+            "trained_files_combine" : [],
+            "trained_file_add" : [],
+            "trained_file_custom_add" : [],
+            "trained_file_combine_add" : [],
         }
         self.prediction_result = {
             "model": None,
@@ -88,14 +110,48 @@ class AiMane:
             "image_data" : None,
             "numpy_array" : None,
             "classes" : None,
-            "class_names" : None
+            "class_names" : None,
+            "model_1": False,
+            "model_1_size" : None,
+            "model_1_classes" : None,
+            "model_2": False,
+            "model_2_size" : None,
+            "model_2_classes" : None,
+            "model_3": False,
+            "model_3_size" : None,
+            "model_3_classes" : None
         }
 
         self.sysmane.set_train_status(total_epoch=self.training_config["epochs"])
         self.prediction_result["model"] = self.training_config["model"]
         self.sysmane.write_status("[INFO] AIMane initialized.")
-        # self.training_config["class_names"] combined with self.training_config["classes"] (merged skip duplicate)
+        self.update_uc_classes()
 
+
+
+    def check_model_status(self):
+        # Check if the model1, model2, model3 is loaded
+        if self.model is None:
+            self.prediction_result["model_1"] = False
+        else:
+            self.prediction_result["model_1"] = True
+            self.prediction_result["model_1_size"] = os.path.getsize("{}/model/{}".format(self.store_path, self.model_name))
+            self.prediction_result["model_1_classes"] = self.training_config["classes"]
+        if self.model_custom is None:
+            self.prediction_result["model_2"] = False
+        else:
+            self.prediction_result["model_2"] = True
+            self.prediction_result["model_2_size"] = os.path.getsize("{}/model/{}".format(self.store_path, self.model_name_custom))
+            self.prediction_result["model_2_classes"] = self.training_config["classes_custom"]
+        if self.model_combine is None:
+            self.prediction_result["model_3"] = False
+        else:
+            self.prediction_result["model_3"] = True
+            self.prediction_result["model_3_size"] = os.path.getsize("{}/model/{}".format(self.store_path, self.model_name_combine))
+            self.prediction_result["model_3_classes"] = self.training_config["classes_combine"]
+
+
+    def update_uc_classes(self):
         # Check if usercontent folder exists and has files
         if os.path.isdir(self.store_path + "/uc") and len(os.listdir(self.store_path + "/uc")) > 0:
             self.sysmane.write_status("[CONFIG] Found usercontent folder with files",nowrite=True)
@@ -108,22 +164,21 @@ class AiMane:
         if(self.training_config["model"] == 1):
             if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
                 self.prediction_result["class_names"] = self.training_config["uc_class_names_custom"]
-                self.prediction_result["classes"] = self.training_config["uc_classes_custom"]
+                self.prediction_result["classes"] = self.training_config["uc_classes_custom"]              
             else:
                 self.prediction_result["class_names"] = self.training_config["class_names_custom"]
-                self.prediction_result["classes"] = self.training_config["classes_custom"]          
+                self.prediction_result["classes"] = self.training_config["classes_custom"] 
+        elif (self.training_config["model"] == 2):
+            self.prediction_result["class_names"] = self.training_config["uc_class_names_combine"]
+            self.prediction_result["classes"] = self.training_config["uc_classes_combine"]   
         else:
             if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
                 self.prediction_result["class_names"] = self.training_config["uc_class_names"]
                 self.prediction_result["classes"] = self.training_config["uc_classes"]
             else:
                 self.prediction_result["class_names"] = self.training_config["class_names"]
-                self.prediction_result["classes"] = self.training_config["classes"]
-
-
-        # self.training_config["class_names"] = list(dict.fromkeys(self.training_config["class_names"]))
-        
-
+                self.prediction_result["classes"] = self.training_config["classes"]        
+    
 
     def get_version(self, as_json=True):
         if as_json:
@@ -195,6 +250,7 @@ class AiMane:
         if usercontent is not None:
             self.training_config["usercontent"] = usercontent
             self.sysmane.write_status("[CONFIG] Training Config: usercontent is now set to " + str(usercontent))
+            self.update_uc_classes()
         if classes is not None:
             self.training_config["classes"] = classes
             self.sysmane.write_status("[CONFIG] Training Config: classes is now set to " + str(classes))
@@ -290,6 +346,8 @@ class AiMane:
             mode = self.training_config["model"]
         if mode == 1:
             model_name = self.model_name_custom
+        elif mode == 2:
+            model_name = self.model_name_combine
         else :
             model_name = self.model_name
 
@@ -298,6 +356,10 @@ class AiMane:
         # Check if model is already loaded
         if(mode == 1):
             if self.model_loaded_custom:
+                return "01"
+                #"MODEL_ALREADY_LOADED"
+        elif mode == 2:
+            if self.model_loaded_combine:
                 return "01"
                 #"MODEL_ALREADY_LOADED"
         else:
@@ -315,10 +377,12 @@ class AiMane:
         self.sysmane.write_status("[INFO] Loading model...",stage="Loading model",percentage=50)
         if(mode == 1):
             self.model_custom = load_model("{}/model/{}".format(self.store_path, model_name))
+        elif mode == 2:
+            self.model_combine = load_model("{}/model/{}".format(self.store_path, model_name))
         else:
             self.model = load_model("{}/model/{}".format(self.store_path, model_name))
         # Check if model is loaded
-        if (mode == 1 and self.model_custom is None) or (mode == 0 and self.model is None):
+        if (mode == 1 and self.model_custom is None) or (mode == 0 and self.model is None) or (mode == 2 and self.model_combine is None):
             self.sysmane.write_status("[ERROR] Model file is corrupted.")
             return "03"
             #"MODEL_CORRUPTED"
@@ -326,6 +390,8 @@ class AiMane:
         self.sysmane.write_status("[INFO] Model loaded successfully.",stage="Loading model",percentage=100,forcewrite=True)
         if mode == 1:
             self.model_loaded_custom = True
+        elif mode == 2:
+            self.model_loaded_combine = True
         else:
             self.model_loaded = True
         # Return True
@@ -341,6 +407,9 @@ class AiMane:
         if model == 1 or model == "1":
             self.training_config["model"] = 1
             self.sysmane.write_status("[CONFIG] Training Config: You are now using custom dataset.")
+        elif model == 2 or model == "2":
+            self.training_config["model"] = 2
+            self.sysmane.write_status("[CONFIG] Training Config: You are now using combined dataset.")
         else:
             self.training_config["model"] = 0
             self.sysmane.write_status("[CONFIG] Training Config: You are now using MNIST dataset.")
@@ -352,7 +421,10 @@ class AiMane:
                 self.prediction_result["classes"] = self.training_config["uc_classes_custom"]
             else:
                 self.prediction_result["class_names"] = self.training_config["class_names_custom"]
-                self.prediction_result["classes"] = self.training_config["classes_custom"]          
+                self.prediction_result["classes"] = self.training_config["classes_custom"]     
+        elif (self.training_config["model"] == 2):
+            self.prediction_result["class_names"] = self.training_config["uc_class_names_combine"]
+            self.prediction_result["classes"] = self.training_config["uc_classes_combine"]     
         else:
             if(self.training_config["usercontent"]) and (self.running_config["usercontent_valid"]):
                 self.prediction_result["class_names"] = self.training_config["uc_class_names"]
@@ -361,7 +433,147 @@ class AiMane:
                 self.prediction_result["class_names"] = self.training_config["class_names"]
                 self.prediction_result["classes"] = self.training_config["classes"]
 
+    # Load {store_path}/trained_status.txt
+    def get_trained_files(self,mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 1:
+            filename = self.training_config["trained_status_file_custom"]
+        if mode == 2:
+            filename = self.training_config["trained_status_file_combine"]
+        else :
+            filename = self.training_config["trained_status_file"]
 
+        # Load the status file
+        status_file_path = os.path.join(self.store_path, filename)
+        if os.path.exists(status_file_path):
+            with open(status_file_path, 'r') as f:
+                status = f.read()
+                # To array split by line
+                status = status.splitlines()
+                # Return status as array
+                if mode == 1:
+                    self.running_config["trained_files_custom"] = status
+                if mode == 2:
+                    self.running_config["trained_files_combine"] = status
+                else:
+                    self.running_config["trained_files"] = status
+                return status
+        else:
+            # Return status as array
+            if mode == 1:
+                self.running_config["trained_files_custom"] = []
+            if mode == 2:
+                self.running_config["trained_files_combine"] = []
+            else:
+                self.running_config["trained_files"] = []
+            return []
+        
+
+    #Add the array to {store_path}/trained_status.txt
+    def add_trained_file(self, file_array, mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 1:
+            filename = self.training_config["trained_status_file_custom"]
+        if mode == 2:
+            filename = self.training_config["trained_status_file_combine"]
+        else :
+            filename = self.training_config["trained_status_file"]
+
+        # Load the status file
+        status_file_path = os.path.join(self.store_path, filename)
+        if os.path.exists(status_file_path):
+            with open(status_file_path, 'a') as f:
+                for file in file_array:
+                    f.write('{}\n'.format(file))
+        else:
+            with open(status_file_path, 'w') as f:
+                for file in file_array:
+                    f.write('{}\n'.format(file))
+
+
+    def is_trained(self, file, mode=None):
+        # Check if the file is already trained by check the array
+        # Mode 0: MNIST dataset
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 1:
+            arr = self.running_config["trained_files"]
+        if mode == 2:
+            arr = self.running_config["trained_files_combine"]
+        else :
+            arr = self.running_config["trained_files_custom"]
+
+        if file in arr:
+            return True
+        else:
+            return False
+        
+    def set_trained(self, file, mode=None):
+        # Add the file to array
+        # Mode 0: MNIST dataset
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 1:
+            arr = self.running_config["trained_file_custom_add"]
+        if mode == 2:
+            arr = self.running_config["trained_file_combine_add"]
+        else :
+            arr = self.running_config["trained_file_add"]
+
+        arr.append(file)
+
+        if mode == 1:
+            self.running_config["trained_files"] = arr
+        if mode == 2:
+            self.running_config["trained_files_combine"] = arr
+        else :
+            self.running_config["trained_files_custom"] = arr
+
+    def delete_trained(self, mode=None):
+        # Delete the array
+        # Mode 0: MNIST dataset
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 1:
+            file = self.training_config["trained_status_file_custom"]
+            self.running_config["trained_file_custom_add"] = []
+        if mode == 2:
+            file = self.training_config["trained_status_file_combine"]
+            self.running_config["trained_file_combine_add"] = []
+        else :
+            file = self.training_config["trained_status_file"]
+            self.running_config["trained_file_add"] = []
+            
+        status_file_path = os.path.join(self.store_path, file)
+        if os.path.exists(status_file_path):
+            os.remove(status_file_path)
+        else:
+            pass    
+
+
+    def write_trained(self, mode=None):
+        # Write the array to file
+        # Mode 0: MNIST dataset
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 1:
+            arr = self.running_config["trained_file_custom_add"]
+            self.add_trained_file(arr,mode=1)
+            self.running_config["trained_file_custom_add"] = []
+        if mode == 2:
+            arr = self.running_config["trained_file_combine_add"]
+            self.add_trained_file(arr,mode=2)
+            self.running_config["trained_file_combine_add"] = []
+        else :
+            arr = self.running_config["trained_file_add"]
+            self.add_trained_file(arr,mode=0)
+            self.running_config["trained_file_add"] = []
 
 
     def check_dataset(self,mode=None):
@@ -372,6 +584,13 @@ class AiMane:
         if mode == 1:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Combined dataset is not supported")
+            return "99"
+        # Can't prepare combine dataset
+        
+            # save_folder_train_pre = self.training_config["save_folder_train_pre"]
+            # save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
@@ -469,6 +688,13 @@ class AiMane:
             os.remove("{}/.prepare_lock".format(self.store_path))
         else:
             self.sysmane.write_status("[INFO] .prepare_lock file not found, Skipping.")
+
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Repair combine dataset is not supported")
+            return "Cannot repair combine dataset"
+            
         # Run prepare_dataset
         self.prepare_dataset(mode)
 
@@ -483,6 +709,13 @@ class AiMane:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
             countfile = self.training_config["countfile_custom"]
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] CCount combine dataset is not supported")
+            return "Cannot count combine dataset"
+            
+            # save_folder_train_pre = self.training_config["save_folder_train_pre_combine"]
+            # save_folder_validate_pre = self.training_config["save_folder_validate_pre_combine"]
+            # countfile = self.training_config["countfile_combine"]
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
@@ -516,6 +749,13 @@ class AiMane:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
             countfile = self.training_config["countfile_custom"]
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Write combine dataset count is not supported")
+            return "Cannot write combine dataset count"
+            
+            # save_folder_train_pre = self.training_config["save_folder_train_pre_combine"]
+            # save_folder_validate_pre = self.training_config["save_folder_validate_pre_combine"]
+            # countfile = self.training_config["countfile_combine"]
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
@@ -551,6 +791,11 @@ class AiMane:
             mode = self.training_config["model"]
         if mode == 1:
             countfile = self.training_config["countfile_custom"]
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Get combine dataset count is not supported")
+            return "Cannot get combine dataset count"
+            
+            # countfile = self.training_config["countfile_combine"]
         else :
             countfile = self.training_config["countfile"]
 
@@ -594,6 +839,11 @@ class AiMane:
         # Mode 1: TFRecord dataset
         if mode is None:
             mode = self.training_config["model"]
+
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Prepare combine dataset is not supported")
+            return "Cannot prepare combine dataset"
+        
 
         save_folder_train_pre = self.training_config["save_folder_train_pre"]
         save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
@@ -783,6 +1033,14 @@ class AiMane:
             save_folder_train_pre = self.training_config["save_folder_train_pre_custom"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre_custom"]
             uc_folder = self.training_config["usercontent_folder_custom"]
+
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Load combine dataset is not supported")
+            return "Cannot load combine dataset"
+            
+            # save_folder_train_pre = self.training_config["save_folder_train_pre_combine"]
+            # save_folder_validate_pre = self.training_config["save_folder_validate_pre_combine"]
+            # uc_folder = self.training_config["usercontent_folder_combine"]
             
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
@@ -831,21 +1089,79 @@ class AiMane:
             return train_images, train_labels, validate_images, validate_labels
         
 
-    def load_mnist(self, path, usercontent=False, mode=None):
+    def load_dataset_uc(self,mode=None):
+        # Mode 0: MNIST dataset
+        # Mode 1: TFRecord dataset
+        if mode is None:
+            mode = self.training_config["model"]
+        if mode == 1:
+            uc_folder = self.training_config["usercontent_folder_custom"]
+
+        if mode == 2:
+            uc_folder = self.training_config["usercontent_folder_combine"]
+            
+            
+        else :
+            uc_folder = self.training_config["usercontent_folder"]
+            
+
+        self.sysmane.write_status("Loading usercontent dataset...", stage="Loading dataset", percentage=0)
+
+        # If usercontent is True, also load the usercontent dataset.
+        if self.training_config["usercontent"]:
+            usercontent_images = None
+            usercontent_labels = None
+            skip = []
+            #Check if the usercontent dataset exists.
+            if not os.path.exists("{}/{}".format(self.store_path, uc_folder)):
+                self.sysmane.write_status("[WARNING!] Usercontent dataset does not exist, Fall back to training dataset only.")
+                if mode == 1:
+                    self.training_config["classes"] = self.training_config["classes_custom"]
+                    self.training_config["class_names"] = self.training_config["class_names_custom"]
+                if mode == 2:
+                    self.training_config["classes"] = self.training_config["classes_combine"]
+                    self.training_config["class_names"] = self.training_config["class_names_combine"]
+                else:
+                    self.training_config["classes"] = 10
+                    self.training_config["class_names"] = ["0","1","2","3","4","5","6","7","8","9"]
+                self.running_config["usercontent_valid"] = False
+                skip = self.get_trained_files()
+            # Load the usercontent dataset.
+            if self.running_config["usercontent_valid"]:
+                usercontent_images, usercontent_labels = self.load_mnist(path = "{}/{}".format(self.store_path, uc_folder),usercontent = True, skiplist = skip)
+                if usercontent_images is not None and usercontent_labels is not None:
+                    # Count the number of usercontent images.
+                    usercontent_count = usercontent_images.shape[0]
+                    self.sysmane.write_status("Usercontent dataset is loaded. {} images are loaded.".format(usercontent_count))
+                else:
+                    self.sysmane.write_status("[WARNING!] Usercontent dataset is not loaded or training dataset is not loaded.")
+        else:
+            self.sysmane.write_status("[ERROR!] Usercontent dataset is not loaded.")
+            return "Usercontent dataset is not loaded."
+        
+        # Check if the dataset is loaded.
+        self.sysmane.write_status("[OK] Dataset is loaded.")
+        return usercontent_images, usercontent_labels
+        
+
+    def load_mnist(self, path, usercontent=False, mode=None, skiplist=None):
         # Mode 0: MNIST dataset
         # Mode 1: TFRecord dataset
         training_classes = 10
-    
         if mode is None:
             mode = self.training_config["model"]
         if mode == 1:
             self.training_config["classes"] = self.training_config["classes_custom"]
             self.training_config["class_names"] = self.training_config["class_names_custom"]
             training_classes = self.training_config["classes_custom"]
-
             if usercontent:
                 training_classes = self.training_config["uc_classes_custom"]
-
+        if mode == 2:
+            self.training_config["classes"] = self.training_config["classes_combine"]
+            self.training_config["class_names"] = self.training_config["class_names_combine"]
+            training_classes = self.training_config["classes_combine"]
+            if usercontent:
+                training_classes = self.training_config["uc_classes_combine"]
         else :
             self.training_config["classes"] = 10
             self.training_config["class_names"] = ["0","1","2","3","4","5","6","7","8","9"]  
@@ -855,6 +1171,9 @@ class AiMane:
                 training_classes = self.training_config["classes"]
         
         self.sysmane.write_status("Loading MNIST dataset from {}...".format(path), nowrite=True)
+        if skiplist is None:
+            self.sysmane.write_status("Skiplist is None. Deleting trained files from skiplist.")
+            self.delete_trained()
 
         # Load the dataset
         images = []
@@ -872,17 +1191,30 @@ class AiMane:
             for filename in os.listdir("{}/{}".format(path, i)):
                 progress = int((i+1)/10*100)
                 self.sysmane.write_status("Loading image {}/{}".format(i, filename), progress, nowrite=True)
+                if skiplist is not None:
+                    if "{}/{}".format(i, filename) in skiplist:
+                        self.sysmane.write_status("Skipping directory {}/{} because it is in skiplist.".format(path, i), progress)
+                        continue
+                
                 image = cv2.imread("{}/{}/{}".format(path, i, filename), cv2.IMREAD_GRAYSCALE)
                 if image is None:
                     self.sysmane.write_status("[ERROR] Image {}/{} is not loaded.".format(i, filename))
                     return None, None
                 else:
+                    # Add the image path to the list.
+                    self.set_trained("{}/{}/{}".format(path, i, filename))
                     images.append(image)
                     labels.append(i)
+
+
         images = np.array(images)
         labels = np.array(labels)
+        self.write_trained()
+
         if mode == 1:
             self.sysmane.write_status("Loading Custom dataset from {} finished.".format(path))
+        if mode == 2:
+            self.sysmane.write_status("Loading Combine dataset from {} finished.".format(path))
         else:
             self.sysmane.write_status("Loading MNIST dataset from {} finished.".format(path))
         return images, labels
@@ -975,10 +1307,6 @@ class AiMane:
         with zipfile.ZipFile(f"{self.store_path}/cache/{filename}.zip", 'r') as zip_ref:
             zip_ref.extractall(f"{self.store_path}/dataset/temp")
         #     self.sysmane.write_status(f"[INFO] Extracting file {filename}.zip", percentage=50,nowrite=True)
-        
-        # Extract file using ZipExtractor(zip_path, store_path)
-        # self.sysmane.write_status(f"[INFO] Extracting file {filename}.zip", percentage=50,nowrite=True)
-        # ZipExtractor(f"{self.store_path}/cache/{filename}.zip", f"{self.store_path}/dataset/temp",self)
 
 
             # Percentage
@@ -1160,6 +1488,10 @@ class AiMane:
             uc_folder = self.training_config["usercontent_folder_custom"]
             countfile = self.training_config["countfile_custom"]
 
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Train combine dataset is not supported")
+            return "Cannot train combine dataset"
+
         else :
             save_folder_train_pre = self.training_config["save_folder_train_pre"]
             save_folder_validate_pre = self.training_config["save_folder_validate_pre"]
@@ -1188,7 +1520,7 @@ class AiMane:
         # Train the model
         self.train_model(train_images, train_labels)
 
-
+    #TODO : Maybe there is a use in the future
     def check_model_before_training(self):
         # Check if the model is trained.
         if os.path.exists("{}/model.h5".format(self.store_path)):
@@ -1210,29 +1542,49 @@ class AiMane:
         if mode == 1:
             classes = self.training_config["uc_classes_custom"] 
             model_name = self.model_name_custom
+            model_layer_name = self.model_layer_name[1]
+        if mode == 2:
+            self.sysmane.write_status("[NOT SUPPORTED] Train combine dataset is not supported")
+            return "Cannot train combine dataset"
         else:
             classes = self.training_config["uc_classes"]
             model_name = self.model_name
+            model_layer_name = self.model_layer_name[0]
             
         # USE GPU or CPU
         if self.training_config["use_gpu"]:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-            config = tf.compat.v1.ConfigProto()
-            session = tf.compat.v1.Session(config=config)
-            self.sysmane.write_status("GPU options are enabled. Try to use GPU.")
-            # Prevent alreay allocated memory from being allocated again.
-            try: 
-                tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
-            except:
-                self.sysmane.write_status("[WARNING] GPU allocation is failed. Maybe It's already allocated.")
-            # tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
+            # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+            # config = tf.compat.v1.ConfigProto()
+            # session = tf.compat.v1.Session(config=config)
+            # self.sysmane.write_status("GPU options are enabled. Try to use GPU.")
+            # # Prevent alreay allocated memory from being allocated again.
+            # try: 
+            #     tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
+            # except:
+            #     self.sysmane.write_status("[WARNING] GPU allocation is failed. Maybe It's already allocated.")
+            # # tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
+
+            gpus = tf.config.experimental.list_physical_devices('GPU')
+
+            if gpus:
+                try:
+                    self.sysmane.write_status("GPU found. Try to use GPU...")
+                    for gpu in gpus:
+                        self.sysmane.write_status("Try to set memory growth for GPU...")
+                        tf.config.experimental.set_memory_growth(gpu, True)
+                except RuntimeError as e:
+                    self.sysmane.write_status("There was an error when trying to set memory growth for GPU: {}".format(e))              
+
 
         self.sysmane.write_status("Training model", stage="Training model", percentage=0)
         self.sysmane.write_status("Training model at {}".format(self.get_current_time()))
+        self.sysmane.write_status("Training model with {} classes".format(classes))
+        self.sysmane.write_status("Training model with {} epochs".format(self.training_config["epochs"]))
+
         train_images = train_images.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0 # Normalize the images to a range of [0, 1]
         # classes = self.training_config["uc_classes"] 
         train_labels = np.eye(classes)[train_labels]
-        model = tf.keras.models.Sequential()
+        model = tf.keras.models.Sequential(name=model_layer_name)
         model.add(Conv2D(64, (3, 3), activation="relu", input_shape=(28, 28, 1))) # Add a convolutional layer with 64 filters, a kernel size of 3x3, and relu activation
         model.add(MaxPooling2D((2, 2)))
         model.add(Flatten()) # Add a flattening layer to convert the features to a single 1D array  
@@ -1268,12 +1620,292 @@ class AiMane:
             # else:
             self.sysmane.write_status("Current model accuracy is higher than last model accuracy. Saving current model.")
             # Save the model
-            model.save("{}/model/{}".format(self.store_path, model_name))   
+            model.save("{}/model/{}".format(self.store_path, model_name))  
+            self.check_model_status()
             self.sysmane.write_status("Model saved at path: {}/model".format(self.store_path))
             self.sysmane.write_status("Training model finished with accuracy: {}".format(current_model_acc))
 
         else:
             self.sysmane.write_status("Training model finished without saving model because save_model is set to False, Finished with accuracy: {}".format(self.get_model_acc()))
+
+
+    def transfer_learning_uc(self, mode=None):
+
+        if mode is None:
+            mode = self.training_config["model"]
+        
+        # Load the pre-trained model
+        load_result = self.load_model()
+
+
+        if load_result == "02":
+            self.sysmane.write_status("Model file not found. Please train the model first.")
+            return "Model file not found. Please train the model first."
+        
+        elif load_result == "03":
+            self.sysmane.write_status("Model file is corrupted. Please train the model again.")
+            return "Model file is corrupted. Please train the model again."
+        
+
+        if mode == 1:
+            base_model = self.model_custom
+            model_name = self.model_name_custom
+            if self.training_config["usercontent"]:
+                new_classes = self.training_config["uc_classes_custom"]
+                self.training_config["classes"] = self.training_config["classes_custom"]
+                self.training_config["class_names"] = self.training_config["class_names_custom"]
+                
+            else:
+                # Exit the function if the usercontent is not enabled
+                self.sysmane.write_status("Usercontent is not enabled. Please enable usercontent first.")
+                return "Usercontent is not enabled. Please enable usercontent first."
+            
+        if mode == 2:
+            base_model = self.model_combine
+            model_name = self.model_name_combine
+            if self.training_config["usercontent"]:
+                new_classes = self.training_config["uc_classes_combine"]
+                self.training_config["classes"] = self.training_config["classes_combine"]
+                self.training_config["class_names"] = self.training_config["class_names_combine"]
+            else:
+                # Exit the function if the usercontent is not enabled
+                self.sysmane.write_status("Usercontent is not enabled. Please enable usercontent first.")
+                return "Usercontent is not enabled. Please enable usercontent first."
+            
+        else:
+            base_model = self.model
+            model_name = self.model_name
+            new_classes = self.training_config["uc_classes"]
+
+
+        # Check if the model is loaded successfully
+        if base_model == None:
+            self.sysmane.write_status("Model is not loaded. Please train the model first.")
+            return "Model is not loaded. Please train the model first."
+        
+
+        # Load the dataset
+        self.sysmane.write_status("Loading dataset...", stage="Transfer Learning", percentage=0)
+        train_images_uc, train_labels_uc= self.load_dataset_uc()
+
+        #Split the dataset into train and validate
+        train_images_uc, validate_images_uc, train_labels_uc, validate_labels_uc = self.train_test_split(train_images_uc, train_labels_uc, test_size=0.1, random_state=42)
+        #Load validation dataset from MNIST or A-Z dataset (depends on the mode)
+        if mode == 1:
+            az_train_images, az_train_labels, az_test_images, az_test_labels = self.load_az_dataset()
+            # Convert to numpy array
+            valid_images_uc = np.array(az_test_images)
+        if mode == 2:
+            az_train_images, az_train_labels, az_test_images, az_test_labels = self.load_az_dataset()
+            mnist_train_images, mnist_train_labels, mnist_validate_images, mnist_validate_labels = self.load_dataset()
+            # Convert to numpy array
+            az_test_images = np.array(az_test_images)
+            az_test_labels = np.array(az_test_labels)
+
+            # Combine the dataset
+            valid_images_uc = np.concatenate((mnist_validate_images, az_test_images), axis=0)
+            valid_labels_uc = np.concatenate((mnist_validate_labels, az_test_labels), axis=0)
+
+        else:
+            mnist_train_images, mnist_train_labels, mnist_validate_images, mnist_validate_labels = self.load_dataset()
+            # Convert to numpy array
+            valid_images_uc = np.array(mnist_validate_images)
+
+        # Combined with the usercontent dataset
+        validate_images_uc = np.concatenate((valid_images_uc, validate_images_uc), axis=0)
+
+        #Convert to numpy array
+        train_images_uc = np.array(train_images_uc)
+        train_labels_uc = np.array(train_labels_uc)
+        validate_images_uc = np.array(validate_images_uc)
+        validate_labels_uc = np.array(validate_labels_uc)
+
+
+        # USE GPU or CPU
+        if self.training_config["use_gpu"]:
+            # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+            # config = tf.compat.v1.ConfigProto()
+            # session = tf.compat.v1.Session(config=config)
+            self.sysmane.write_status("GPU options are enabled. Try to use GPU.")
+            # # Prevent alreay allocated memory from being allocated again.
+            # try: 
+            #     tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
+            # except:
+            #     self.sysmane.write_status("[WARNING] GPU allocation is failed. Maybe It's already allocated.")
+            # tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
+
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+
+        if gpus:
+            try:
+                self.sysmane.write_status("GPU found. Try to use GPU...")
+                for gpu in gpus:
+                    self.sysmane.write_status("Try to set memory growth for GPU...")
+                    tf.config.experimental.set_memory_growth(gpu, True)
+            except RuntimeError as e:
+                self.sysmane.write_status("There was an error when trying to set memory growth for GPU: {}".format(e))      
+
+        self.sysmane.write_status("Transfer Learning model", stage="Transfer Learning", percentage=0)
+        self.sysmane.write_status("Transfer Learning with Usercontent at {}".format(self.get_current_time()))
+
+
+
+        train_images_uc = train_images_uc.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0 # Normalize the images to a range of [0, 1]
+        train_labels_uc = np.eye(new_classes)[train_labels_uc]
+        validate_images_uc = validate_images_uc.reshape((-1, 28, 28, 1)).astype(np.float32) / 255.0 # Normalize the images to a range of [0, 1]
+        validate_labels_uc = np.eye(new_classes)[validate_labels_uc]
+
+        # Check if the dataset is loaded.
+        if train_images_uc is None or train_labels_uc is None or validate_images_uc is None or validate_labels_uc is None:
+            self.sysmane.write_status("[ERROR] Dataset is not loaded, Maybe the dataset is wrong or maybe It's already trained before.")
+            return "Dataset is not loaded."
+        else:
+            self.sysmane.write_status("[OK] Dataset is loaded.")
+            
+
+        # Freeze the layers of the pre-trained model
+        base_model.trainable = False
+        
+        # Add new layers for the new image dataset
+        model = tf.keras.models.Sequential(name="transferl1")
+        model.add(base_model)
+        model.add(Flatten())
+        model.add(Dense(new_classes, activation='softmax'))
+        
+        # Compile the model
+        model.compile(loss=tf.keras.losses.categorical_crossentropy, optimizer=tf.keras.optimizers.Adam(), metrics=["accuracy"])
+        
+        verbose_callback = VerboseCallback(self,1)
+        # Create and configure the verbose callback
+        callbacks = [verbose_callback]
+
+
+        # Train the model with the new dataset
+        model.fit(train_images_uc, train_labels_uc, epochs=self.training_config["epochs"], callbacks=callbacks)
+        
+        # Give back VRAM to the system
+        if self.training_config["use_gpu"]:
+            tf.keras.backend.clear_session()
+            self.sysmane.write_status("GPU options are enabled. Try to give back VRAM to the system.")
+
+        if self.training_config["save_model"]:
+            os.makedirs("{}/model".format(self.store_path), exist_ok=True)
+            current_model_acc = self.get_model_acc()
+            self.sysmane.write_status("Current model accuracy (Transfer): {}".format(current_model_acc))
+            model.save("{}/model/{}".format(self.store_path, model_name))   
+            self.check_model_status()
+            self.sysmane.write_status("Model saved at path: {}/model".format(self.store_path))
+            self.sysmane.write_status("Training model finished with accuracy: {}".format(current_model_acc))
+        else:
+            self.sysmane.write_status("Training model finished without saving model because save_model is set to False, Finished with accuracy: {}".format(self.get_model_acc()))        
+
+
+    
+    def train_test_split(self, data, labels, test_size=0.1, random_state=None):
+        # Set the random seed for reproducibility
+        random.seed(random_state)
+        
+        # Calculate the number of samples for the test set
+        test_size = int(len(data) * test_size)
+        
+        # Shuffle the data and labels together
+        combined = list(zip(data, labels))
+        random.shuffle(combined)
+        data_shuffled, labels_shuffled = zip(*combined)
+
+        # Split the shuffled data and labels into training and test sets
+        train_data = data_shuffled[:-test_size]
+        train_labels = labels_shuffled[:-test_size]
+        
+        test_data = data_shuffled[-test_size:]
+        test_labels = labels_shuffled[-test_size:]
+
+        return train_data, test_data, train_labels, test_labels
+
+        
+    # Transfer learning by combining two models
+    def combine_model(self, model1=None, model2=None):
+        if model1 is None:
+            model1 = self.model
+        if model2 is None:
+            model2 = self.model_custom
+        
+        # Load model 1
+        self.sysmane.write_status(status="Loading model 1 ...", stage="Transfer Learning", percentage=0)
+        self.load_model(mode=0)
+        model1 = self.model
+
+        # Load model 2
+        self.sysmane.write_status(status="Loading model 2 ...", stage="Transfer Learning", percentage=0)
+        self.load_model(mode=1)
+        model2 = self.model_custom
+
+        # Check model status
+        self.check_model_status()
+
+        # Check if model 1 is loaded
+        if model1 is None:
+            self.sysmane.write_status("Model 1 is not loaded. Please train the model first.")
+            return "Model 1 is not loaded. Please train the model first."
+
+        # Check if model 2 is loaded
+        if model2 is None:
+            self.sysmane.write_status("Model 2 is not loaded. Please train the model first.")
+            return "Model 2 is not loaded. Please train the model first."
+        
+        # Freeze the layers of the pre-trained models
+        model1.trainable = False
+        model2.trainable = False
+
+        # Set unique names for the layers in model 1
+        for layer in model1.layers:
+            self.sysmane.write_status(status="Setting unique names for the layers in model 1 ...", stage="Transfer Learning", percentage=0)
+            layer._name = f"model1_{layer.name}"
+
+        # Set unique names for the layers in model 2
+        for layer in model2.layers:
+            self.sysmane.write_status(status="Setting unique names for the layers in model 2 ... ", stage="Transfer Learning", percentage=0)
+            layer._name = f"model2_{layer.name}"    
+
+
+        # Create an input layer for the combined model
+        input_combined = tf.keras.layers.Input(shape=(28, 28, 1))
+
+        # Get the outputs of the original models
+        output1 = model1(input_combined)
+        output2 = model2(input_combined)
+
+        # Add a Dense layer for combined classification
+        combined_output = tf.keras.layers.Concatenate()([output1, output2])
+
+        # Create the combined model
+        combined_model = tf.keras.Model(inputs=input_combined, outputs=combined_output)
+
+        # Compile the model
+        combined_model.compile(
+            loss=tf.keras.losses.categorical_crossentropy,
+            optimizer=tf.keras.optimizers.Adam(),
+            metrics=["accuracy"]
+        )
+
+        # Write status
+        self.sysmane.write_status(status="Combining model...", stage="Transfer Learning", percentage=0)
+
+        combined_model.save("{}/model/{}".format(self.store_path, self.model_name_combine))
+
+        # Check model status
+        if combined_model is None:
+            self.sysmane.write_status("Combined model seems to be empty. Please check the model.")
+            return "Combined model seems to be empty. Please check the model."
+        else:
+            self.sysmane.write_status("Combined model is created successfully.")
+
+        # Return the combined model
+        return combined_model
+
+
+
+
 
 
 
@@ -1342,6 +1974,14 @@ class AiMane:
             else:
                 self.training_config["classes"] = self.training_config["classes_custom"]
                 self.training_config["class_names"] = self.training_config["class_names_custom"]
+        if mode == 2:
+            save_folder = self.training_config["result_folder_combine"]
+            if self.training_config["usercontent"]:
+                self.training_config["classes"] = self.training_config["uc_classes_combine"]
+                self.training_config["class_names"] = self.training_config["uc_class_names_combine"]
+            else:
+                self.training_config["classes"] = self.training_config["classes_combine"]
+                self.training_config["class_names"] = self.training_config["class_names_combine"]
         else :
             save_folder = self.training_config["result_folder"]
             if self.training_config["usercontent"]:
@@ -1353,6 +1993,7 @@ class AiMane:
 
 
         load_result = self.load_model()
+        self.check_model_status()
         #00 - Model loaded successfully
         #01 - Model already loaded
         #02 - Model file not found
@@ -1368,6 +2009,8 @@ class AiMane:
         
         if mode == 1:
             model = self.model_custom
+        if mode == 2:
+            model = self.model_combine
         else:
             model = self.model
 
@@ -1428,6 +2071,8 @@ class AiMane:
             mode = self.training_config["model"]
         if mode == 1:
             save_folder = self.training_config["result_folder_custom"]
+        if mode == 2:
+            save_folder = self.training_config["result_folder_combine"]
         else :
             save_folder = self.training_config["result_folder"]
 
@@ -1465,6 +2110,9 @@ class AiMane:
         if mode == 1:
             uc_folder = self.training_config["usercontent_folder_custom"]
             res_folder = self.training_config["result_folder_custom"]
+        if mode == 2:
+            uc_folder = self.training_config["usercontent_folder_combine"]
+            res_folder = self.training_config["result_folder_combine"]
         else :
             uc_folder = self.training_config["usercontent_folder"]
             res_folder = self.training_config["result_folder"]
@@ -1515,6 +2163,9 @@ class AiMane:
         if mode == 1:
             uc_folder = self.training_config["usercontent_folder_custom"]
             res_folder = self.training_config["result_folder_custom"]
+        if mode == 2:
+            uc_folder = self.training_config["usercontent_folder_combine"]
+            res_folder = self.training_config["result_folder_combine"]
         else :
             uc_folder = self.training_config["usercontent_folder"]
             res_folder = self.training_config["result_folder"]
@@ -1546,7 +2197,6 @@ class AiMane:
         self.save_image(image, filename)
         self.sysmane.write_status("User content saved at {}".format(filename))
 
-    
 
     def get_current_time(self):
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1588,11 +2238,12 @@ class AiMane:
         exit(0)
 
 class VerboseCallback(Callback):
-    def __init__(self, aimane):
+    def __init__(self, aimane, mode=0):
         super(VerboseCallback, self).__init__()
         self.sysmane = aimane.sysmane
         self.aimane = aimane
         self.percentage = 0
+        self.mode = mode
 
 
     def on_batch_end(self, batch, logs=None):
@@ -1612,9 +2263,14 @@ class VerboseCallback(Callback):
             percentage = percentage = (batch + 1) / 60000 * 100 
             # Cut the zeros after 3 decimal places
             percentage = "{:.3f}".format(percentage + self.percentage)
-            self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=percentage)
+            self.sysmane.write_status("Batch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(batch + 1, logs["loss"], logs["accuracy"]), percentage=percentage, nowrite=True)
             # self.sysmane.set_train_status(status=status, stage=stage, percentage=percentage, epoch=epoch, batch=batch, loss=loss, acc=acc)
-            self.sysmane.set_train_status(status="Training model", stage="Training model on batch {}".format(batch + 1), percentage=percentage, epoch=None, batch=batch, loss=logs["loss"], acc=logs["accuracy"], finished=False, result="Not ready")
+            if self.mode == 1:
+                status_text = ["Transfer Learning model", "Transfer Learning model on batch {}".format(batch + 1)]
+            else:
+                status_text = ["Training model", "Training model on batch {}".format(batch + 1)]
+            
+            self.sysmane.set_train_status(status=status_text[0], stage=status_text[1], percentage=percentage, epoch=None, batch=batch, loss=logs["loss"], acc=logs["accuracy"], finished=False, result="Not ready")
 
     def on_epoch_end(self, epoch, logs=None):
         if logs is not None and "loss" in logs and "accuracy" in logs:
@@ -1625,40 +2281,46 @@ class VerboseCallback(Callback):
             # Update percentage by Epoch / Total Epochs * 100
             self.percentage = (epoch + 1) / self.params["epochs"] * 100
             percentage = "{:.3f}".format(self.percentage)
-            self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage)
-            self.sysmane.set_train_status(status="Training model", stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"])
+            self.sysmane.write_status("Epoch: {}, Loss: {:.4f}, Accuracy: {:.4f}".format(epoch + 1, logs["loss"], logs["accuracy"]), stage="Training model on epoch {}".format(epoch + 1), percentage=percentage, nowrite=True)
+            if self.mode == 1:
+                status_text = ["Transfer Learning model", "Transfer Learning model on epoch {}".format(epoch + 1)]
+            else:
+                status_text = ["Training model", "Training model on epoch {}".format(epoch + 1)]
+            
+            self.sysmane.set_train_status(status=status_text[0], stage=status_text[1], percentage=percentage, epoch=epoch+1, batch=None, loss=logs["loss"], acc=logs["accuracy"])
             if self.aimane.training_config["stop_on_acc"] is not None and self.aimane.training_config["stop_on_acc"] != 0 and logs["accuracy"] >= self.aimane.training_config["stop_on_acc"] and self.model is not None:
                 self.model.stop_training = True
-                self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
-                self.aimane.write_model_acc(logs["accuracy"])
-                self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+                if self.mode == 1:
+                    self.sysmane.write_status("Transfer Learning model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Transfer Learning model", percentage=100,forcewrite=True)
+                    self.aimane.write_model_acc(logs["accuracy"])
+                    self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Transfer Learning model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+                else:
+                    self.sysmane.write_status("Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
+                    self.aimane.write_model_acc(logs["accuracy"])
+                    self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Training model finished early on epoch {} with satisfied accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+
+
             elif self.params is not None and epoch + 1 == self.params["epochs"]:
-                self.sysmane.write_status("Training model finished on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
-                self.aimane.write_model_acc(logs["accuracy"])
-                self.sysmane.set_train_status(status="Finished training", stage="Finished on epoch {}".format(epoch + 1), finished=True, result="Training model finished on set epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+                if self.mode == 1:
+                    self.sysmane.write_status("Transfer Learning model finished on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Transfer Learning model", percentage=100,forcewrite=True)
+                    self.aimane.write_model_acc(logs["accuracy"])
+                    self.sysmane.set_train_status(status="Finished training", stage="Finished on epoch {}".format(epoch + 1), finished=True, result="Transfer Learning model finished on set epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+                else:
+                    self.sysmane.write_status("Training model finished on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
+                    self.aimane.write_model_acc(logs["accuracy"])
+                    self.sysmane.set_train_status(status="Finished training", stage="Finished on epoch {}".format(epoch + 1), finished=True, result="Training model finished on set epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+
 
             #Check if training is finished (Spare case if model.stop_training is not working)
             if self.model is not None and self.model.stop_training:
-                self.sysmane.write_status("Training model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
-                self.aimane.write_model_acc(logs["accuracy"])
-                self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Training model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
-
-class ZipExtractor:
-    def __init__(self, zip_path, store_path, sysmane):
-        self.zip_path = zip_path
-        self.store_path = store_path
-        self.sysmane = sysmane
-
-    def extract_with_progress(self):
-        with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
-            total_files = len(zip_ref.namelist())
-            
-            # Use tqdm to create a progress bar
-            with tqdm(total=total_files, unit='file') as pbar:
-                for file_info in zip_ref.infolist():
-                    zip_ref.extract(file_info, os.path.join(self.store_path, 'dataset', 'temp'))
-                    pbar.update(1)
-                    SysMane.write_status("Extracting ZIP dataset: {}".format(file_info.filename), percentage= "{:.3f}".format(pbar.n / total_files * 100))
+                if self.mode == 1:
+                    self.sysmane.write_status("Transfer Learning model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Transfer Learning model", percentage=100,forcewrite=True)
+                    self.aimane.write_model_acc(logs["accuracy"])
+                    self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Transfer Learning model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
+                else:
+                    self.sysmane.write_status("Training model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), stage="Training model", percentage=100,forcewrite=True)
+                    self.aimane.write_model_acc(logs["accuracy"])
+                    self.sysmane.set_train_status(status="Finished training", stage="Finished early on epoch {}".format(epoch + 1), finished=True, result="Training model finished early on epoch {} with accuracy {}".format(epoch + 1, logs["accuracy"]), percentage=100)
 
 
     # def handleModelUpload(self, model):
