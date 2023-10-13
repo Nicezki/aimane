@@ -1,17 +1,15 @@
 <!doctype html>
-<html class=" optml_no_js " lang="th">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="profile" href="https://gmpg.org/xfn/11">
-<title>ไม่พบหน้า &#8211; Nicezki Life</title>
+<title>ไม่พบหน้า &#8211; Nicezki Design</title>
 <meta name="robots" content="noindex, nofollow" />
-<link rel="dns-prefetch" href="//ml3ddxffxzm3.i.optimole.com" />
-<link rel="preconnect" href="https://ml3ddxffxzm3.i.optimole.com" />
-<link rel="alternate" type="application/rss+xml" title="Nicezki Life &raquo; ฟีด" href="https://me.nicezki.com/feed/" />
-<link rel="alternate" type="application/rss+xml" title="Nicezki Life &raquo; ฟีดความเห็น" href="https://me.nicezki.com/comments/feed/" />
-<script type="f0771aab06c4fc3c5662e8ed-text/javascript">
-window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/14.0.0\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/14.0.0\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/me.nicezki.com\/wp-includes\/js\/wp-emoji-release.min.js?ver=6.3"}};
+<link rel="alternate" type="application/rss+xml" title="Nicezki Design &raquo; ฟีด" href="https://design.nicezki.com/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Nicezki Design &raquo; ฟีดความเห็น" href="https://design.nicezki.com/comments/feed/" />
+<script type="ce3c470f2d9d7fd24c5405f3-text/javascript">
+window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/14.0.0\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/14.0.0\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/design.nicezki.com\/wp-includes\/js\/wp-emoji-release.min.js?ver=6.3.2"}};
 /*! This file is auto-generated */
 !function(i,n){var o,s,e;function c(e){try{var t={supportTests:e,timestamp:(new Date).valueOf()};sessionStorage.setItem(o,JSON.stringify(t))}catch(e){}}function p(e,t,n){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);var t=new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data),r=(e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(n,0,0),new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data));return t.every(function(e,t){return e===r[t]})}function u(e,t,n){switch(t){case"flag":return n(e,"\ud83c\udff3\ufe0f\u200d\u26a7\ufe0f","\ud83c\udff3\ufe0f\u200b\u26a7\ufe0f")?!1:!n(e,"\ud83c\uddfa\ud83c\uddf3","\ud83c\uddfa\u200b\ud83c\uddf3")&&!n(e,"\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f","\ud83c\udff4\u200b\udb40\udc67\u200b\udb40\udc62\u200b\udb40\udc65\u200b\udb40\udc6e\u200b\udb40\udc67\u200b\udb40\udc7f");case"emoji":return!n(e,"\ud83e\udef1\ud83c\udffb\u200d\ud83e\udef2\ud83c\udfff","\ud83e\udef1\ud83c\udffb\u200b\ud83e\udef2\ud83c\udfff")}return!1}function f(e,t,n){var r="undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?new OffscreenCanvas(300,150):i.createElement("canvas"),a=r.getContext("2d",{willReadFrequently:!0}),o=(a.textBaseline="top",a.font="600 32px Arial",{});return e.forEach(function(e){o[e]=t(a,e,n)}),o}function t(e){var t=i.createElement("script");t.src=e,t.defer=!0,i.head.appendChild(t)}"undefined"!=typeof Promise&&(o="wpEmojiSettingsSupports",s=["flag","emoji"],n.supports={everything:!0,everythingExceptFlag:!0},e=new Promise(function(e){i.addEventListener("DOMContentLoaded",e,{once:!0})}),new Promise(function(t){var n=function(){try{var e=JSON.parse(sessionStorage.getItem(o));if("object"==typeof e&&"number"==typeof e.timestamp&&(new Date).valueOf()<e.timestamp+604800&&"object"==typeof e.supportTests)return e.supportTests}catch(e){}return null}();if(!n){if("undefined"!=typeof Worker&&"undefined"!=typeof OffscreenCanvas&&"undefined"!=typeof URL&&URL.createObjectURL&&"undefined"!=typeof Blob)try{var e="postMessage("+f.toString()+"("+[JSON.stringify(s),u.toString(),p.toString()].join(",")+"));",r=new Blob([e],{type:"text/javascript"}),a=new Worker(URL.createObjectURL(r),{name:"wpTestEmojiSupports"});return void(a.onmessage=function(e){c(n=e.data),a.terminate(),t(n)})}catch(e){}c(n=f(s,u,p))}t(n)}).then(function(e){for(var t in e)n.supports[t]=e[t],n.supports.everything=n.supports.everything&&n.supports[t],"flag"!==t&&(n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&n.supports[t]);n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&!n.supports.flag,n.DOMReady=!1,n.readyCallback=function(){n.DOMReady=!0}}).then(function(){return e}).then(function(){var e;n.supports.everything||(n.readyCallback(),(e=n.source||{}).concatemoji?t(e.concatemoji):e.wpemoji&&e.twemoji&&(t(e.twemoji),t(e.wpemoji)))}))}((window,document),window._wpemojiSettings);
 </script>
@@ -29,10 +27,10 @@ img.emoji {
 	padding: 0 !important;
 }
 </style>
-<link rel="stylesheet" id="dce-animations-css" href="https://me.nicezki.com/wp-content/plugins/dynamic-content-for-elementor_2.10.7_nf/assets/css/animations.css?ver=2.10.7" media="all" />
-<link rel="stylesheet" id="bdt-uikit-css" href="https://me.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/css/bdt-uikit.css?ver=3.15.1" media="all" />
-<link rel="stylesheet" id="ep-helper-css" href="https://me.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/css/ep-helper.css?ver=6.8.0" media="all" />
-<link rel="stylesheet" id="wp-block-library-css" href="https://me.nicezki.com/wp-includes/css/dist/block-library/style.min.css?ver=6.3" media="all" />
+<link rel="stylesheet" id="dce-animations-css" href="https://design.nicezki.com/wp-content/plugins/dynamic-content-for-elementor_2.10.7_nf/assets/css/animations.css?ver=2.10.7" media="all" />
+<link rel="stylesheet" id="bdt-uikit-css" href="https://design.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/css/bdt-uikit.css?ver=3.15.1" media="all" />
+<link rel="stylesheet" id="ep-helper-css" href="https://design.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/css/ep-helper.css?ver=6.8.0" media="all" />
+<link rel="stylesheet" id="wp-block-library-css" href="https://design.nicezki.com/wp-includes/css/dist/block-library/style.min.css?ver=6.3.2" media="all" />
 <style id="classic-theme-styles-inline-css">
 /*! This file is auto-generated */
 .wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}
@@ -44,112 +42,44 @@ body{--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: 
 :where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}
 .wp-block-pullquote{font-size: 1.5em;line-height: 1.6;}
 </style>
-<link rel="stylesheet" id="hello-elementor-css" href="https://me.nicezki.com/wp-content/themes/hello-elementor/style.min.css?ver=2.8.1" media="all" />
-<link rel="stylesheet" id="hello-elementor-theme-style-css" href="https://me.nicezki.com/wp-content/themes/hello-elementor/theme.min.css?ver=2.8.1" media="all" />
-<link rel="stylesheet" id="elementor-frontend-css" href="https://me.nicezki.com/wp-content/plugins/elementor/assets/css/frontend-lite.min.css?ver=3.15.2" media="all" />
-<link rel="stylesheet" id="elementor-post-6-css" href="https://me.nicezki.com/wp-content/uploads/elementor/css/post-6.css?ver=1692178706" media="all" />
-<link rel="stylesheet" id="elementor-icons-css" href="https://me.nicezki.com/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css?ver=5.21.0" media="all" />
-<link rel="stylesheet" id="swiper-css" href="https://me.nicezki.com/wp-content/plugins/elementor/assets/lib/swiper/css/swiper.min.css?ver=5.3.6" media="all" />
-<link rel="stylesheet" id="powerpack-frontend-css" href="https://me.nicezki.com/wp-content/plugins/powerpack-elements/assets/css/min/frontend.min.css?ver=2.9.23" media="all" />
-<link rel="stylesheet" id="dashicons-css" href="https://me.nicezki.com/wp-includes/css/dashicons.min.css?ver=6.3" media="all" />
-<link rel="stylesheet" id="elementor-pro-css" href="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/css/frontend-lite.min.css?ver=3.15.1" media="all" />
-<link rel="stylesheet" id="elementor-global-css" href="https://me.nicezki.com/wp-content/uploads/elementor/css/global.css?ver=1692179269" media="all" />
-<link rel="stylesheet" id="elementor-post-131-css" href="https://me.nicezki.com/wp-content/uploads/elementor/css/post-131.css?ver=1692185921" media="all" />
-<link rel="stylesheet" id="elementor-post-146-css" href="https://me.nicezki.com/wp-content/uploads/elementor/css/post-146.css?ver=1692185921" media="all" />
-<style id="optm_lazyload_noscript_style-inline-css">
-html.optml_no_js img[data-opt-src] { display: none !important; } 
- html .elementor-section[data-settings*="background_background"]:not(.optml-bg-lazyloaded),
-html .elementor-section > .elementor-background-overlay:not(.optml-bg-lazyloaded),
-html [class*="wp-block-cover"][style*="background-image"]:not(.optml-bg-lazyloaded),
-html .elementor-widget-container:not(.optml-bg-lazyloaded),
-html .elementor-background-slideshow__slide__image:not(.optml-bg-lazyloaded) { background-image: none !important; } 
-</style>
-<link rel="stylesheet" id="google-fonts-1-css" href="https://fonts.googleapis.com/css?family=Kodchasan%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic&#038;display=swap&#038;ver=6.3" media="all" />
-<link rel="stylesheet" id="elementor-icons-shared-0-css" href="https://me.nicezki.com/wp-content/plugins/elementor/assets/lib/font-awesome/css/fontawesome.min.css?ver=5.15.3" media="all" />
-<link rel="stylesheet" id="elementor-icons-fa-solid-css" href="https://me.nicezki.com/wp-content/plugins/elementor/assets/lib/font-awesome/css/solid.min.css?ver=5.15.3" media="all" />
-<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin> <script type="f0771aab06c4fc3c5662e8ed-text/javascript">
+<link rel="stylesheet" id="hello-elementor-css" href="https://design.nicezki.com/wp-content/themes/hello-elementor/style.min.css?ver=2.8.1" media="all" />
+<link rel="stylesheet" id="hello-elementor-theme-style-css" href="https://design.nicezki.com/wp-content/themes/hello-elementor/theme.min.css?ver=2.8.1" media="all" />
+<link rel="stylesheet" id="elementor-frontend-css" href="https://design.nicezki.com/wp-content/plugins/elementor/assets/css/frontend-lite.min.css?ver=3.15.2" media="all" />
+<link rel="stylesheet" id="elementor-post-6-css" href="https://design.nicezki.com/wp-content/uploads/elementor/css/post-6.css?ver=1694417391" media="all" />
+<link rel="stylesheet" id="elementor-icons-css" href="https://design.nicezki.com/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css?ver=5.21.0" media="all" />
+<link rel="stylesheet" id="swiper-css" href="https://design.nicezki.com/wp-content/plugins/elementor/assets/lib/swiper/css/swiper.min.css?ver=5.3.6" media="all" />
+<link rel="stylesheet" id="powerpack-frontend-css" href="https://design.nicezki.com/wp-content/plugins/powerpack-elements/assets/css/min/frontend.min.css?ver=2.9.23" media="all" />
+<link rel="stylesheet" id="dashicons-css" href="https://design.nicezki.com/wp-includes/css/dashicons.min.css?ver=6.3.2" media="all" />
+<link rel="stylesheet" id="elementor-pro-css" href="https://design.nicezki.com/wp-content/plugins/elementor-pro/assets/css/frontend-lite.min.css?ver=3.15.1" media="all" />
+<link rel="stylesheet" id="elementor-global-css" href="https://design.nicezki.com/wp-content/uploads/elementor/css/global.css?ver=1694417392" media="all" />
+<link rel="stylesheet" id="elementor-post-131-css" href="https://design.nicezki.com/wp-content/uploads/elementor/css/post-131.css?ver=1694418541" media="all" />
+<link rel="stylesheet" id="elementor-post-146-css" href="https://design.nicezki.com/wp-content/uploads/elementor/css/post-146.css?ver=1694418541" media="all" />
+<link rel="stylesheet" id="style_login_widget-css" href="https://design.nicezki.com/wp-content/plugins/miniorange-login-with-eve-online-google-facebook/css/style_login_widget.min.css?ver=6.24.10" media="all" />
+<link rel="stylesheet" id="google-fonts-1-css" href="https://fonts.googleapis.com/css?family=Kodchasan%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic&#038;display=swap&#038;ver=6.3.2" media="all" />
+<link rel="stylesheet" id="elementor-icons-shared-0-css" href="https://design.nicezki.com/wp-content/plugins/elementor/assets/lib/font-awesome/css/fontawesome.min.css?ver=5.15.3" media="all" />
+<link rel="stylesheet" id="elementor-icons-fa-solid-css" href="https://design.nicezki.com/wp-content/plugins/elementor/assets/lib/font-awesome/css/solid.min.css?ver=5.15.3" media="all" />
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin> <script type="ce3c470f2d9d7fd24c5405f3-text/javascript">
             /* <![CDATA[ */
             var rcewpp = {
-                "ajax_url":"https://me.nicezki.com/wp-admin/admin-ajax.php",
-                "nonce": "c4c94d5adb",
-                "home_url": "https://me.nicezki.com/",
-                "settings_icon": 'https://ml3ddxffxzm3.i.optimole.com/w:auto/h:auto/q:mauto/f:avif/https://me.nicezki.com/wp-content/plugins/export-wp-page-to-static-html/admin/images/settings.png',
-                "settings_hover_icon": 'https://ml3ddxffxzm3.i.optimole.com/w:auto/h:auto/q:mauto/f:avif/https://me.nicezki.com/wp-content/plugins/export-wp-page-to-static-html/admin/images/settings_hover.png'
+                "ajax_url":"https://design.nicezki.com/wp-admin/admin-ajax.php",
+                "nonce": "4267b4c83f",
+                "home_url": "https://design.nicezki.com/",
+                "settings_icon": 'https://design.nicezki.com/wp-content/plugins/export-wp-page-to-static-html/admin/images/settings.png',
+                "settings_hover_icon": 'https://design.nicezki.com/wp-content/plugins/export-wp-page-to-static-html/admin/images/settings_hover.png'
             };
             /* ]]\> */
         </script>
-<script id="jquery-core-js-extra" type="f0771aab06c4fc3c5662e8ed-text/javascript">
-var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
+<script id="jquery-core-js-extra" type="ce3c470f2d9d7fd24c5405f3-text/javascript">
+var pp = {"ajax_url":"https:\/\/design.nicezki.com\/wp-admin\/admin-ajax.php"};
 </script>
-<script src="https://me.nicezki.com/wp-includes/js/jquery/jquery.min.js?ver=3.7.0" id="jquery-core-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1" id="jquery-migrate-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script id="optml-print-js-after" type="f0771aab06c4fc3c5662e8ed-text/javascript">
-			(function(w, d){
-					w.addEventListener("beforeprint", function(){
-						let images = d.getElementsByTagName( "img" );
-							for (let img of images) {
-								if ( !img.dataset.optSrc) {
-									continue;
-								}
-								img.src = img.dataset.optSrc;
-								delete img.dataset.optSrc;
-							}
-					});
-			
-			}(window, document));
-								
-</script>
-<link rel="https://api.w.org/" href="https://me.nicezki.com/wp-json/" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://me.nicezki.com/xmlrpc.php?rsd" />
-<meta name="generator" content="WordPress 6.3" />
-<meta name="generator" content="Elementor 3.15.2; features: e_dom_optimization, e_optimized_assets_loading, e_optimized_css_loading, additional_custom_breakpoints; settings: css_print_method-external, google_font-enabled, font_display-swap">
-<meta name="generator" content="Optimole 3.9.2">
-<style type="text/css">
-			img[data-opt-src]:not([data-opt-lazy-loaded]) {
-				transition: .2s filter linear, .2s opacity linear, .2s border-radius linear;
-				-webkit-transition: .2s filter linear, .2s opacity linear, .2s border-radius linear;
-				-moz-transition: .2s filter linear, .2s opacity linear, .2s border-radius linear;
-				-o-transition: .2s filter linear, .2s opacity linear, .2s border-radius linear;
-			}
-			img[data-opt-src]:not([data-opt-lazy-loaded]) {
-					opacity: .75;
-					-webkit-filter: blur(8px);
-					-moz-filter: blur(8px);
-					-o-filter: blur(8px);
-					-ms-filter: blur(8px);
-					filter: blur(8px);
-					transform: scale(1.04);
-					animation: 0.1s ease-in;
-					-webkit-transform: translate3d(0, 0, 0);
-			}
-			/** optmliframelazyloadplaceholder */
-		</style>
-<script type="f0771aab06c4fc3c5662e8ed-application/javascript">
-					document.documentElement.className = document.documentElement.className.replace(/\boptml_no_js\b/g, "");
-						(function(w, d){
-							var b = d.getElementsByTagName("head")[0];
-							var s = d.createElement("script");
-							var v = ("IntersectionObserver" in w && "isIntersecting" in w.IntersectionObserverEntry.prototype) ? "_no_poly" : "";
-							s.async = true;
-							s.src = "https://ml3ddxffxzm3.i.optimole.com/js-lib/v2/latest/optimole_lib" + v  + ".min.js";
-							b.appendChild(s);
-							w.optimoleData = {
-								lazyloadOnly: "optimole-lazy-only",
-								backgroundReplaceClasses: [],
-								nativeLazyload : false,
-								scalingDisabled: false,
-								watchClasses: [],
-								backgroundLazySelectors: ".elementor-section[data-settings*=\"background_background\"], .elementor-section > .elementor-background-overlay, [class*=\"wp-block-cover\"][style*=\"background-image\"], .elementor-widget-container, .elementor-background-slideshow__slide__image",
-								network_optimizations: false,
-								ignoreDpr: true,
-								quality: 0,
-								maxWidth: 0,
-								maxHeight: 0,
-							}
-						}(window, document));
-		</script><link rel="icon" href="https://ml3ddxffxzm3.i.optimole.com/w:32/h:32/q:mauto/f:avif/https://me.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x.png" sizes="32x32" />
-<link rel="icon" href="https://ml3ddxffxzm3.i.optimole.com/w:192/h:192/q:mauto/f:avif/https://me.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x.png" sizes="192x192" />
-<link rel="apple-touch-icon" href="https://ml3ddxffxzm3.i.optimole.com/w:180/h:180/q:mauto/f:avif/https://me.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x.png" />
-<meta name="msapplication-TileImage" content="https://ml3ddxffxzm3.i.optimole.com/w:270/h:270/q:mauto/f:avif/https://me.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x.png" />
+<script src="https://design.nicezki.com/wp-includes/js/jquery/jquery.min.js?ver=3.7.0" id="jquery-core-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1" id="jquery-migrate-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<link rel="https://api.w.org/" href="https://design.nicezki.com/wp-json/" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://design.nicezki.com/xmlrpc.php?rsd" />
+<meta name="generator" content="WordPress 6.3.2" />
+<link rel="icon" href="https://design.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x-32x32.png" sizes="32x32" />
+<link rel="icon" href="https://design.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x-192x192.png" sizes="192x192" />
+<link rel="apple-touch-icon" href="https://design.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x-180x180.png" />
+<meta name="msapplication-TileImage" content="https://design.nicezki.com/wp-content/uploads/2022/11/cropped-nzki-min-logo@033x-270x270.png" />
 </head>
 <body class="error404 wp-custom-logo elementor-default elementor-kit-6">
 <a class="skip-link screen-reader-text" href="#content">Skip to content</a>
@@ -171,36 +101,13 @@ var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
 </div>
 <div class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-4162d5fe" data-id="4162d5fe" data-element_type="column">
 <div class="elementor-widget-wrap elementor-element-populated">
-<div class="elementor-element elementor-element-f411ce1 elementor-nav-menu--dropdown-tablet elementor-nav-menu__text-align-aside elementor-nav-menu--toggle elementor-nav-menu--burger elementor-widget elementor-widget-nav-menu" data-id="f411ce1" data-element_type="widget" data-settings="{&quot;layout&quot;:&quot;horizontal&quot;,&quot;submenu_icon&quot;:{&quot;value&quot;:&quot;&lt;i class=\&quot;fas fa-caret-down\&quot;&gt;&lt;\/i&gt;&quot;,&quot;library&quot;:&quot;fa-solid&quot;},&quot;toggle&quot;:&quot;burger&quot;}" data-widget_type="nav-menu.default">
-<div class="elementor-widget-container">
-<link rel="stylesheet" href="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/css/widget-nav-menu.min.css"> <nav class="elementor-nav-menu--main elementor-nav-menu__container elementor-nav-menu--layout-horizontal e--pointer-underline e--animation-fade">
-<ul id="menu-1-f411ce1" class="elementor-nav-menu"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-208"><a href="https://me.nicezki.com/" class="elementor-item">Home</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-209"><a href="https://me.nicezki.com/about-me/" class="elementor-item">About me</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-210"><a href="https://me.nicezki.com/games/" class="elementor-item">Games</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-441"><a href="https://me.nicezki.com/anime/" class="elementor-item">Anime</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-706"><a href="https://me.nicezki.com/music/" class="elementor-item">Music</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-918"><a href="https://me.nicezki.com/fun-project/" class="elementor-item">Fun Project</a></li>
-</ul> </nav>
-<div class="elementor-menu-toggle" role="button" tabindex="0" aria-label="Menu Toggle" aria-expanded="false">
-<i aria-hidden="true" role="presentation" class="elementor-menu-toggle__icon--open eicon-menu-bar"></i><i aria-hidden="true" role="presentation" class="elementor-menu-toggle__icon--close eicon-close"></i> <span class="elementor-screen-only">Menu</span>
-</div>
-<nav class="elementor-nav-menu--dropdown elementor-nav-menu__container" aria-hidden="true">
-<ul id="menu-2-f411ce1" class="elementor-nav-menu"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-208"><a href="https://me.nicezki.com/" class="elementor-item" tabindex="-1">Home</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-209"><a href="https://me.nicezki.com/about-me/" class="elementor-item" tabindex="-1">About me</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-210"><a href="https://me.nicezki.com/games/" class="elementor-item" tabindex="-1">Games</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-441"><a href="https://me.nicezki.com/anime/" class="elementor-item" tabindex="-1">Anime</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-706"><a href="https://me.nicezki.com/music/" class="elementor-item" tabindex="-1">Music</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-918"><a href="https://me.nicezki.com/fun-project/" class="elementor-item" tabindex="-1">Fun Project</a></li>
-</ul> </nav>
-</div>
-</div>
 </div>
 </div>
 <div class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-3e5f4972" data-id="3e5f4972" data-element_type="column">
 <div class="elementor-widget-wrap elementor-element-populated">
 <div class="elementor-element elementor-element-649f7f44 elementor-search-form--skin-full_screen elementor-widget elementor-widget-search-form" data-id="649f7f44" data-element_type="widget" data-settings="{&quot;skin&quot;:&quot;full_screen&quot;,&quot;_animation_mobile&quot;:&quot;none&quot;,&quot;_animation&quot;:&quot;none&quot;}" data-widget_type="search-form.default">
 <div class="elementor-widget-container">
-<link rel="stylesheet" href="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/css/widget-theme-elements.min.css"> <form class="elementor-search-form" action="https://me.nicezki.com" method="get" role="search">
+<link rel="stylesheet" href="https://design.nicezki.com/wp-content/plugins/elementor-pro/assets/css/widget-theme-elements.min.css"> <form class="elementor-search-form" action="https://design.nicezki.com" method="get" role="search">
 <div class="elementor-search-form__toggle" tabindex="0" role="button">
 <i aria-hidden="true" class="fas fa-search"></i> <span class="elementor-screen-only">Search</span>
 </div>
@@ -226,7 +133,7 @@ var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
 <div class="elementor-element elementor-element-b449f9a dce_masking-none elementor-widget elementor-widget-image" data-id="b449f9a" data-element_type="widget" data-settings="{&quot;_animation&quot;:&quot;none&quot;,&quot;_animation_mobile&quot;:&quot;none&quot;}" data-widget_type="image.default">
 <div class="elementor-widget-container">
 <style>/*! elementor - v3.15.0 - 09-08-2023 */
-.elementor-widget-image{text-align:center}.elementor-widget-image a{display:inline-block}.elementor-widget-image a img[src$=".svg"]{width:48px}.elementor-widget-image img{vertical-align:middle;display:inline-block}</style> <img decoding="async" width="150" height="150" src="https://ml3ddxffxzm3.i.optimole.com/w:150/h:150/q:mauto/rt:fill/g:ce/f:avif/https://me.nicezki.com/wp-content/uploads/2022/11/nzki-min-logo@033x.png" class="attachment-thumbnail size-thumbnail wp-image-138" alt /> </div>
+.elementor-widget-image{text-align:center}.elementor-widget-image a{display:inline-block}.elementor-widget-image a img[src$=".svg"]{width:48px}.elementor-widget-image img{vertical-align:middle;display:inline-block}</style> <img width="150" height="150" src="https://design.nicezki.com/wp-content/uploads/2022/11/nzki-min-logo@033x-150x150.png" class="attachment-thumbnail size-thumbnail wp-image-138" alt srcset="https://design.nicezki.com/wp-content/uploads/2022/11/nzki-min-logo@033x-150x150.png 150w, https://design.nicezki.com/wp-content/uploads/2022/11/nzki-min-logo@033x-300x300.png 300w, https://design.nicezki.com/wp-content/uploads/2022/11/nzki-min-logo@033x.png 660w" sizes="(max-width: 150px) 100vw, 150px" /> </div>
 </div>
 </div>
 </div>
@@ -235,7 +142,7 @@ var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
 <div class="elementor-element elementor-element-6066dbed elementor-widget elementor-widget-heading" data-id="6066dbed" data-element_type="widget" data-settings="{&quot;_animation_mobile&quot;:&quot;none&quot;}" data-widget_type="heading.default">
 <div class="elementor-widget-container">
 <style>/*! elementor - v3.15.0 - 09-08-2023 */
-.elementor-heading-title{padding:0;margin:0;line-height:1}.elementor-widget-heading .elementor-heading-title[class*=elementor-size-]>a{color:inherit;font-size:inherit;line-height:inherit}.elementor-widget-heading .elementor-heading-title.elementor-size-small{font-size:15px}.elementor-widget-heading .elementor-heading-title.elementor-size-medium{font-size:19px}.elementor-widget-heading .elementor-heading-title.elementor-size-large{font-size:29px}.elementor-widget-heading .elementor-heading-title.elementor-size-xl{font-size:39px}.elementor-widget-heading .elementor-heading-title.elementor-size-xxl{font-size:59px}</style><h2 class="elementor-heading-title elementor-size-default"><a href="https://me.nicezki.com">Nicezki</a></h2> </div>
+.elementor-heading-title{padding:0;margin:0;line-height:1}.elementor-widget-heading .elementor-heading-title[class*=elementor-size-]>a{color:inherit;font-size:inherit;line-height:inherit}.elementor-widget-heading .elementor-heading-title.elementor-size-small{font-size:15px}.elementor-widget-heading .elementor-heading-title.elementor-size-medium{font-size:19px}.elementor-widget-heading .elementor-heading-title.elementor-size-large{font-size:29px}.elementor-widget-heading .elementor-heading-title.elementor-size-xl{font-size:39px}.elementor-widget-heading .elementor-heading-title.elementor-size-xxl{font-size:59px}</style><h2 class="elementor-heading-title elementor-size-default"><a href="https://design.nicezki.com">Nicezki</a></h2> </div>
 </div>
 </div>
 </div>
@@ -243,7 +150,7 @@ var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
 <div class="elementor-widget-wrap elementor-element-populated">
 <div class="elementor-element elementor-element-72bda9e9 elementor-search-form--skin-full_screen elementor-widget elementor-widget-search-form" data-id="72bda9e9" data-element_type="widget" data-settings="{&quot;skin&quot;:&quot;full_screen&quot;,&quot;_animation_mobile&quot;:&quot;none&quot;,&quot;_animation&quot;:&quot;none&quot;}" data-widget_type="search-form.default">
 <div class="elementor-widget-container">
-<form class="elementor-search-form" action="https://me.nicezki.com" method="get" role="search">
+<form class="elementor-search-form" action="https://design.nicezki.com" method="get" role="search">
 <div class="elementor-search-form__toggle" tabindex="0" role="button">
 <i aria-hidden="true" class="fas fa-search"></i> <span class="elementor-screen-only">Search</span>
 </div>
@@ -261,29 +168,6 @@ var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
 </div>
 <div class="elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-5d87549a" data-id="5d87549a" data-element_type="column">
 <div class="elementor-widget-wrap elementor-element-populated">
-<div class="elementor-element elementor-element-4d5e17d elementor-nav-menu__align-left elementor-nav-menu--stretch elementor-nav-menu__text-align-center elementor-nav-menu--dropdown-tablet elementor-nav-menu--toggle elementor-nav-menu--burger elementor-widget elementor-widget-nav-menu" data-id="4d5e17d" data-element_type="widget" data-settings="{&quot;full_width&quot;:&quot;stretch&quot;,&quot;_animation&quot;:&quot;none&quot;,&quot;_animation_mobile&quot;:&quot;none&quot;,&quot;layout&quot;:&quot;horizontal&quot;,&quot;submenu_icon&quot;:{&quot;value&quot;:&quot;&lt;i class=\&quot;fas fa-caret-down\&quot;&gt;&lt;\/i&gt;&quot;,&quot;library&quot;:&quot;fa-solid&quot;},&quot;toggle&quot;:&quot;burger&quot;}" data-widget_type="nav-menu.default">
-<div class="elementor-widget-container">
-<nav class="elementor-nav-menu--main elementor-nav-menu__container elementor-nav-menu--layout-horizontal e--pointer-underline e--animation-grow">
-<ul id="menu-1-4d5e17d" class="elementor-nav-menu"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-208"><a href="https://me.nicezki.com/" class="elementor-item">Home</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-209"><a href="https://me.nicezki.com/about-me/" class="elementor-item">About me</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-210"><a href="https://me.nicezki.com/games/" class="elementor-item">Games</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-441"><a href="https://me.nicezki.com/anime/" class="elementor-item">Anime</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-706"><a href="https://me.nicezki.com/music/" class="elementor-item">Music</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-918"><a href="https://me.nicezki.com/fun-project/" class="elementor-item">Fun Project</a></li>
-</ul> </nav>
-<div class="elementor-menu-toggle" role="button" tabindex="0" aria-label="Menu Toggle" aria-expanded="false">
-<i aria-hidden="true" role="presentation" class="elementor-menu-toggle__icon--open eicon-menu-bar"></i><i aria-hidden="true" role="presentation" class="elementor-menu-toggle__icon--close eicon-close"></i> <span class="elementor-screen-only">Menu</span>
-</div>
-<nav class="elementor-nav-menu--dropdown elementor-nav-menu__container" aria-hidden="true">
-<ul id="menu-2-4d5e17d" class="elementor-nav-menu"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-208"><a href="https://me.nicezki.com/" class="elementor-item" tabindex="-1">Home</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-209"><a href="https://me.nicezki.com/about-me/" class="elementor-item" tabindex="-1">About me</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-210"><a href="https://me.nicezki.com/games/" class="elementor-item" tabindex="-1">Games</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-441"><a href="https://me.nicezki.com/anime/" class="elementor-item" tabindex="-1">Anime</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-706"><a href="https://me.nicezki.com/music/" class="elementor-item" tabindex="-1">Music</a></li>
-<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-918"><a href="https://me.nicezki.com/fun-project/" class="elementor-item" tabindex="-1">Fun Project</a></li>
-</ul> </nav>
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -309,7 +193,7 @@ var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
 <div class="elementor-widget-wrap elementor-element-populated">
 <div class="elementor-element elementor-element-34cc19b dce_masking-none elementor-widget elementor-widget-image" data-id="34cc19b" data-element_type="widget" data-widget_type="image.default">
 <div class="elementor-widget-container">
-<img decoding="async" width="300" height="95" src="https://ml3ddxffxzm3.i.optimole.com/w:300/h:95/q:mauto/f:avif/https://me.nicezki.com/wp-content/uploads/2022/11/nicezki_works.png" class="attachment-medium size-medium wp-image-92" alt /> </div>
+<img width="300" height="95" src="https://design.nicezki.com/wp-content/uploads/2022/11/nicezki_works-300x95.png" class="attachment-medium size-medium wp-image-92" alt loading="lazy" srcset="https://design.nicezki.com/wp-content/uploads/2022/11/nicezki_works-300x95.png 300w, https://design.nicezki.com/wp-content/uploads/2022/11/nicezki_works.png 730w" sizes="(max-width: 300px) 100vw, 300px" /> </div>
 </div>
 <div class="elementor-element elementor-element-89c510a elementor-widget elementor-widget-text-editor" data-id="89c510a" data-element_type="widget" data-widget_type="text-editor.default">
 <div class="elementor-widget-container">
@@ -325,45 +209,45 @@ var pp = {"ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
 </div>
 </section>
 </div>
-<link rel="stylesheet" id="dce-style-css" href="https://me.nicezki.com/wp-content/plugins/dynamic-content-for-elementor_2.10.7_nf/assets/css/style.min.css?ver=2.10.7" media="all" />
-<link rel="stylesheet" id="dce-dynamic-visibility-css" href="https://me.nicezki.com/wp-content/plugins/dynamic-content-for-elementor_2.10.7_nf/assets/css/dynamic-visibility.min.css?ver=2.10.7" media="all" />
-<script src="https://me.nicezki.com/wp-content/themes/hello-elementor/assets/js/hello-frontend.min.js?ver=1.0.0" id="hello-theme-frontend-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/lib/smartmenus/jquery.smartmenus.min.js?ver=1.0.1" id="smartmenus-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script id="bdt-uikit-js-extra" type="f0771aab06c4fc3c5662e8ed-text/javascript">
-var element_pack_ajax_login_config = {"ajaxurl":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php","language":"th","loadingmessage":"Sending user info, please wait...","unknownerror":"Unknown error, make sure access is correct!"};
-var ElementPackConfig = {"ajaxurl":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php","nonce":"0e5eae132a","data_table":{"language":{"lengthMenu":"Show _MENU_ Entries","info":"Showing _START_ to _END_ of _TOTAL_ entries","search":"Search :","sZeroRecords":"No matching records found","paginate":{"previous":"Previous","next":"Next"}}},"contact_form":{"sending_msg":"Sending message please wait...","captcha_nd":"Invisible captcha not defined!","captcha_nr":"Could not get invisible captcha response!"},"mailchimp":{"subscribing":"Subscribing you please wait..."},"search":{"more_result":"More Results","search_result":"SEARCH RESULT","not_found":"not found"},"elements_data":{"sections":[],"columns":[],"widgets":[]}};
+<link rel="stylesheet" id="dce-style-css" href="https://design.nicezki.com/wp-content/plugins/dynamic-content-for-elementor_2.10.7_nf/assets/css/style.min.css?ver=2.10.7" media="all" />
+<link rel="stylesheet" id="dce-dynamic-visibility-css" href="https://design.nicezki.com/wp-content/plugins/dynamic-content-for-elementor_2.10.7_nf/assets/css/dynamic-visibility.min.css?ver=2.10.7" media="all" />
+<script src="https://design.nicezki.com/wp-content/themes/hello-elementor/assets/js/hello-frontend.min.js?ver=1.0.0" id="hello-theme-frontend-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script id="bdt-uikit-js-extra" type="ce3c470f2d9d7fd24c5405f3-text/javascript">
+var element_pack_ajax_login_config = {"ajaxurl":"https:\/\/design.nicezki.com\/wp-admin\/admin-ajax.php","language":"th","loadingmessage":"Sending user info, please wait...","unknownerror":"Unknown error, make sure access is correct!"};
+var ElementPackConfig = {"ajaxurl":"https:\/\/design.nicezki.com\/wp-admin\/admin-ajax.php","nonce":"d1c2aa9229","data_table":{"language":{"lengthMenu":"Show _MENU_ Entries","info":"Showing _START_ to _END_ of _TOTAL_ entries","search":"Search :","sZeroRecords":"No matching records found","paginate":{"previous":"Previous","next":"Next"}}},"contact_form":{"sending_msg":"Sending message please wait...","captcha_nd":"Invisible captcha not defined!","captcha_nr":"Could not get invisible captcha response!"},"mailchimp":{"subscribing":"Subscribing you please wait..."},"search":{"more_result":"More Results","search_result":"SEARCH RESULT","not_found":"not found"},"elements_data":{"sections":[],"columns":[],"widgets":[]}};
 </script>
-<script src="https://me.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/js/bdt-uikit.min.js?ver=3.15.1" id="bdt-uikit-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor/assets/js/webpack.runtime.min.js?ver=3.15.2" id="elementor-webpack-runtime-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor/assets/js/frontend-modules.min.js?ver=3.15.2" id="elementor-frontend-modules-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor/assets/lib/waypoints/waypoints.min.js?ver=4.0.2" id="elementor-waypoints-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-includes/js/jquery/ui/core.min.js?ver=1.13.2" id="jquery-ui-core-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script id="elementor-frontend-js-before" type="f0771aab06c4fc3c5662e8ed-text/javascript">
-var elementorFrontendConfig = {"environmentMode":{"edit":false,"wpPreview":false,"isScriptDebug":false},"i18n":{"shareOnFacebook":"Share on Facebook","shareOnTwitter":"Share on Twitter","pinIt":"Pin it","download":"Download","downloadImage":"Download image","fullscreen":"Fullscreen","zoom":"Zoom","share":"Share","playVideo":"Play Video","previous":"Previous","next":"Next","close":"Close","a11yCarouselWrapperAriaLabel":"Carousel | Horizontal scrolling: Arrow Left & Right","a11yCarouselPrevSlideMessage":"Previous slide","a11yCarouselNextSlideMessage":"Next slide","a11yCarouselFirstSlideMessage":"This is the first slide","a11yCarouselLastSlideMessage":"This is the last slide","a11yCarouselPaginationBulletMessage":"Go to slide"},"is_rtl":false,"breakpoints":{"xs":0,"sm":480,"md":768,"lg":1025,"xl":1440,"xxl":1600},"responsive":{"breakpoints":{"mobile":{"label":"Mobile Portrait","value":767,"default_value":767,"direction":"max","is_enabled":true},"mobile_extra":{"label":"Mobile Landscape","value":880,"default_value":880,"direction":"max","is_enabled":false},"tablet":{"label":"Tablet Portrait","value":1024,"default_value":1024,"direction":"max","is_enabled":true},"tablet_extra":{"label":"Tablet Landscape","value":1200,"default_value":1200,"direction":"max","is_enabled":false},"laptop":{"label":"Laptop","value":1366,"default_value":1366,"direction":"max","is_enabled":false},"widescreen":{"label":"Widescreen","value":2400,"default_value":2400,"direction":"min","is_enabled":false}}},"version":"3.15.2","is_static":false,"experimentalFeatures":{"e_dom_optimization":true,"e_optimized_assets_loading":true,"e_optimized_css_loading":true,"additional_custom_breakpoints":true,"container":true,"theme_builder_v2":true,"hello-theme-header-footer":true,"landing-pages":true,"page-transitions":true,"notes":true,"loop":true,"form-submissions":true,"e_scroll_snap":true},"urls":{"assets":"https:\/\/me.nicezki.com\/wp-content\/plugins\/elementor\/assets\/"},"swiperClass":"swiper-container","settings":{"editorPreferences":[],"dynamicooo":[]},"kit":{"active_breakpoints":["viewport_mobile","viewport_tablet"],"global_image_lightbox":"yes","lightbox_enable_counter":"yes","lightbox_enable_fullscreen":"yes","lightbox_enable_zoom":"yes","lightbox_enable_share":"yes","lightbox_title_src":"title","lightbox_description_src":"description","hello_header_logo_type":"logo","hello_header_menu_layout":"horizontal","hello_footer_logo_type":"logo"},"post":{"id":0,"title":"\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e2b\u0e19\u0e49\u0e32 &#8211; Nicezki Life","excerpt":""}};
+<script src="https://design.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/js/bdt-uikit.min.js?ver=3.15.1" id="bdt-uikit-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/elementor/assets/js/webpack.runtime.min.js?ver=3.15.2" id="elementor-webpack-runtime-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/elementor/assets/js/frontend-modules.min.js?ver=3.15.2" id="elementor-frontend-modules-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/elementor/assets/lib/waypoints/waypoints.min.js?ver=4.0.2" id="elementor-waypoints-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-includes/js/jquery/ui/core.min.js?ver=1.13.2" id="jquery-ui-core-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script id="elementor-frontend-js-before" type="ce3c470f2d9d7fd24c5405f3-text/javascript">
+var elementorFrontendConfig = {"environmentMode":{"edit":false,"wpPreview":false,"isScriptDebug":false},"i18n":{"shareOnFacebook":"Share on Facebook","shareOnTwitter":"Share on Twitter","pinIt":"Pin it","download":"Download","downloadImage":"Download image","fullscreen":"Fullscreen","zoom":"Zoom","share":"Share","playVideo":"Play Video","previous":"Previous","next":"Next","close":"Close","a11yCarouselWrapperAriaLabel":"Carousel | Horizontal scrolling: Arrow Left & Right","a11yCarouselPrevSlideMessage":"Previous slide","a11yCarouselNextSlideMessage":"Next slide","a11yCarouselFirstSlideMessage":"This is the first slide","a11yCarouselLastSlideMessage":"This is the last slide","a11yCarouselPaginationBulletMessage":"Go to slide"},"is_rtl":false,"breakpoints":{"xs":0,"sm":480,"md":768,"lg":1025,"xl":1440,"xxl":1600},"responsive":{"breakpoints":{"mobile":{"label":"Mobile Portrait","value":767,"default_value":767,"direction":"max","is_enabled":true},"mobile_extra":{"label":"Mobile Landscape","value":880,"default_value":880,"direction":"max","is_enabled":false},"tablet":{"label":"Tablet Portrait","value":1024,"default_value":1024,"direction":"max","is_enabled":true},"tablet_extra":{"label":"Tablet Landscape","value":1200,"default_value":1200,"direction":"max","is_enabled":false},"laptop":{"label":"Laptop","value":1366,"default_value":1366,"direction":"max","is_enabled":false},"widescreen":{"label":"Widescreen","value":2400,"default_value":2400,"direction":"min","is_enabled":false}}},"version":"3.15.2","is_static":false,"experimentalFeatures":{"e_dom_optimization":true,"e_optimized_assets_loading":true,"e_optimized_css_loading":true,"additional_custom_breakpoints":true,"container":true,"theme_builder_v2":true,"hello-theme-header-footer":true,"landing-pages":true,"page-transitions":true,"notes":true,"loop":true,"form-submissions":true,"e_scroll_snap":true},"urls":{"assets":"https:\/\/design.nicezki.com\/wp-content\/plugins\/elementor\/assets\/"},"swiperClass":"swiper-container","settings":{"editorPreferences":[],"dynamicooo":[]},"kit":{"active_breakpoints":["viewport_mobile","viewport_tablet"],"global_image_lightbox":"yes","lightbox_enable_counter":"yes","lightbox_enable_fullscreen":"yes","lightbox_enable_zoom":"yes","lightbox_enable_share":"yes","lightbox_title_src":"title","lightbox_description_src":"description","hello_header_logo_type":"logo","hello_header_menu_layout":"horizontal","hello_footer_logo_type":"logo"},"post":{"id":0,"title":"\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e2b\u0e19\u0e49\u0e32 &#8211; Nicezki Design","excerpt":""}};
 </script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor/assets/js/frontend.min.js?ver=3.15.2" id="elementor-frontend-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/js/common/helper.min.js?ver=6.8.0" id="element-pack-helper-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/js/webpack-pro.runtime.min.js?ver=3.15.1" id="elementor-pro-webpack-runtime-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-includes/js/dist/vendor/wp-polyfill-inert.min.js?ver=3.1.2" id="wp-polyfill-inert-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-includes/js/dist/vendor/regenerator-runtime.min.js?ver=0.13.11" id="regenerator-runtime-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-includes/js/dist/vendor/wp-polyfill.min.js?ver=3.15.0" id="wp-polyfill-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-includes/js/dist/hooks.min.js?ver=c6aec9a8d4e5a5d543a1" id="wp-hooks-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-includes/js/dist/i18n.min.js?ver=7701b0c3857f914212ef" id="wp-i18n-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script id="wp-i18n-js-after" type="f0771aab06c4fc3c5662e8ed-text/javascript">
+<script src="https://design.nicezki.com/wp-content/plugins/elementor/assets/js/frontend.min.js?ver=3.15.2" id="elementor-frontend-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/bdthemes-element-pack/assets/js/common/helper.min.js?ver=6.8.0" id="element-pack-helper-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/elementor-pro/assets/js/webpack-pro.runtime.min.js?ver=3.15.1" id="elementor-pro-webpack-runtime-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-includes/js/dist/vendor/wp-polyfill-inert.min.js?ver=3.1.2" id="wp-polyfill-inert-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-includes/js/dist/vendor/regenerator-runtime.min.js?ver=0.13.11" id="regenerator-runtime-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-includes/js/dist/vendor/wp-polyfill.min.js?ver=3.15.0" id="wp-polyfill-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-includes/js/dist/hooks.min.js?ver=c6aec9a8d4e5a5d543a1" id="wp-hooks-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-includes/js/dist/i18n.min.js?ver=7701b0c3857f914212ef" id="wp-i18n-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script id="wp-i18n-js-after" type="ce3c470f2d9d7fd24c5405f3-text/javascript">
 wp.i18n.setLocaleData( { 'text direction\u0004ltr': [ 'ltr' ] } );
 </script>
-<script id="elementor-pro-frontend-js-before" type="f0771aab06c4fc3c5662e8ed-text/javascript">
-var ElementorProFrontendConfig = {"ajaxurl":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php","nonce":"f84ce5bfb3","urls":{"assets":"https:\/\/me.nicezki.com\/wp-content\/plugins\/elementor-pro\/assets\/","rest":"https:\/\/me.nicezki.com\/wp-json\/"},"shareButtonsNetworks":{"facebook":{"title":"Facebook","has_counter":true},"twitter":{"title":"Twitter"},"linkedin":{"title":"LinkedIn","has_counter":true},"pinterest":{"title":"Pinterest","has_counter":true},"reddit":{"title":"Reddit","has_counter":true},"vk":{"title":"VK","has_counter":true},"odnoklassniki":{"title":"OK","has_counter":true},"tumblr":{"title":"Tumblr"},"digg":{"title":"Digg"},"skype":{"title":"Skype"},"stumbleupon":{"title":"StumbleUpon","has_counter":true},"mix":{"title":"Mix"},"telegram":{"title":"Telegram"},"pocket":{"title":"Pocket","has_counter":true},"xing":{"title":"XING","has_counter":true},"whatsapp":{"title":"WhatsApp"},"email":{"title":"Email"},"print":{"title":"Print"}},"facebook_sdk":{"lang":"th","app_id":""},"lottie":{"defaultAnimationUrl":"https:\/\/me.nicezki.com\/wp-content\/plugins\/elementor-pro\/modules\/lottie\/assets\/animations\/default.json"}};
+<script id="elementor-pro-frontend-js-before" type="ce3c470f2d9d7fd24c5405f3-text/javascript">
+var ElementorProFrontendConfig = {"ajaxurl":"https:\/\/design.nicezki.com\/wp-admin\/admin-ajax.php","nonce":"da440d08e6","urls":{"assets":"https:\/\/design.nicezki.com\/wp-content\/plugins\/elementor-pro\/assets\/","rest":"https:\/\/design.nicezki.com\/wp-json\/"},"shareButtonsNetworks":{"facebook":{"title":"Facebook","has_counter":true},"twitter":{"title":"Twitter"},"linkedin":{"title":"LinkedIn","has_counter":true},"pinterest":{"title":"Pinterest","has_counter":true},"reddit":{"title":"Reddit","has_counter":true},"vk":{"title":"VK","has_counter":true},"odnoklassniki":{"title":"OK","has_counter":true},"tumblr":{"title":"Tumblr"},"digg":{"title":"Digg"},"skype":{"title":"Skype"},"stumbleupon":{"title":"StumbleUpon","has_counter":true},"mix":{"title":"Mix"},"telegram":{"title":"Telegram"},"pocket":{"title":"Pocket","has_counter":true},"xing":{"title":"XING","has_counter":true},"whatsapp":{"title":"WhatsApp"},"email":{"title":"Email"},"print":{"title":"Print"}},"facebook_sdk":{"lang":"th","app_id":""},"lottie":{"defaultAnimationUrl":"https:\/\/design.nicezki.com\/wp-content\/plugins\/elementor-pro\/modules\/lottie\/assets\/animations\/default.json"}};
 </script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/js/frontend.min.js?ver=3.15.1" id="elementor-pro-frontend-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/js/elements-handlers.min.js?ver=3.15.1" id="pro-elements-handlers-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/elementor-pro/assets/lib/sticky/jquery.sticky.min.js?ver=3.15.1" id="e-sticky-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script id="powerpack-frontend-js-extra" type="f0771aab06c4fc3c5662e8ed-text/javascript">
-var ppLogin = {"empty_username":"Enter a username or email address.","empty_password":"Enter password.","empty_password_1":"Enter a password.","empty_password_2":"Re-enter password.","empty_recaptcha":"Please check the captcha to verify you are not a robot.","email_sent":"A password reset email has been sent to the email address for your account, but may take several minutes to show up in your inbox. Please wait at least 10 minutes before attempting another reset.","reset_success":"Your password has been reset successfully.","ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php","show_password":"Show password","hide_password":"Hide password"};
-var ppRegistration = {"invalid_username":"This username is invalid because it uses illegal characters. Please enter a valid username.","username_exists":"This username is already registered. Please choose another one.","empty_email":"Please type your email address.","invalid_email":"The email address isn\u2019t correct!","email_exists":"The email is already registered, please choose another one.","password":"Password must not contain the character \"\\\\\"","password_length":"Your password should be at least 8 characters long.","password_mismatch":"Password does not match.","invalid_url":"URL seems to be invalid.","recaptcha_php_ver":"reCAPTCHA API requires PHP version 5.3 or above.","recaptcha_missing_key":"Your reCAPTCHA Site or Secret Key is missing!","show_password":"Show password","hide_password":"Hide password","ajax_url":"https:\/\/me.nicezki.com\/wp-admin\/admin-ajax.php"};
+<script src="https://design.nicezki.com/wp-content/plugins/elementor-pro/assets/js/frontend.min.js?ver=3.15.1" id="elementor-pro-frontend-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/elementor-pro/assets/js/elements-handlers.min.js?ver=3.15.1" id="pro-elements-handlers-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/elementor-pro/assets/lib/sticky/jquery.sticky.min.js?ver=3.15.1" id="e-sticky-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script id="powerpack-frontend-js-extra" type="ce3c470f2d9d7fd24c5405f3-text/javascript">
+var ppLogin = {"empty_username":"Enter a username or email address.","empty_password":"Enter password.","empty_password_1":"Enter a password.","empty_password_2":"Re-enter password.","empty_recaptcha":"Please check the captcha to verify you are not a robot.","email_sent":"A password reset email has been sent to the email address for your account, but may take several minutes to show up in your inbox. Please wait at least 10 minutes before attempting another reset.","reset_success":"Your password has been reset successfully.","ajax_url":"https:\/\/design.nicezki.com\/wp-admin\/admin-ajax.php","show_password":"Show password","hide_password":"Hide password"};
+var ppRegistration = {"invalid_username":"This username is invalid because it uses illegal characters. Please enter a valid username.","username_exists":"This username is already registered. Please choose another one.","empty_email":"Please type your email address.","invalid_email":"The email address isn\u2019t correct!","email_exists":"The email is already registered, please choose another one.","password":"Password must not contain the character \"\\\\\"","password_length":"Your password should be at least 8 characters long.","password_mismatch":"Password does not match.","invalid_url":"URL seems to be invalid.","recaptcha_php_ver":"reCAPTCHA API requires PHP version 5.3 or above.","recaptcha_missing_key":"Your reCAPTCHA Site or Secret Key is missing!","show_password":"Show password","hide_password":"Hide password","ajax_url":"https:\/\/design.nicezki.com\/wp-admin\/admin-ajax.php"};
 var ppCoupons = {"copied_text":"Copied"};
 </script>
-<script src="https://me.nicezki.com/wp-content/plugins/powerpack-elements/assets/js/min/frontend.min.js?ver=2.9.23" id="powerpack-frontend-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
-<script src="https://me.nicezki.com/wp-content/plugins/powerpack-elements/assets/lib/tooltipster/tooltipster.min.js?ver=2.9.23" id="pp-tooltipster-js" type="f0771aab06c4fc3c5662e8ed-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/powerpack-elements/assets/js/min/frontend.min.js?ver=2.9.23" id="powerpack-frontend-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="https://design.nicezki.com/wp-content/plugins/powerpack-elements/assets/lib/tooltipster/tooltipster.min.js?ver=2.9.23" id="pp-tooltipster-js" type="ce3c470f2d9d7fd24c5405f3-text/javascript"></script>
+<script src="/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js" data-cf-settings="ce3c470f2d9d7fd24c5405f3-|49" defer></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8b253dfea2ab4077af8c6f58422dfbfd1689876627854" integrity="sha512-bjgnUKX4azu3dLTVtie9u6TKqgx29RBwfj3QXYt5EKfWM/9hPSAI/4qcV5NACjwAo8UtTeWefx6Zq5PHcMm7Tg==" data-cf-beacon='{"rayId":"815497173e415f42","version":"2023.8.0","r":1,"b":1,"token":"816c551999e84b2fa833f7fa489d64a8","si":100}' crossorigin="anonymous"></script>
 </body>
 </html>
