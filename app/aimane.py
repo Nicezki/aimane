@@ -375,12 +375,12 @@ class AiMane:
         
         # Load model
         self.sysmane.write_status("[INFO] Loading model...",stage="Loading model",percentage=50)
-        if(mode == 1):
-            self.model_custom = load_model("{}/model/{}".format(self.store_path, model_name))
-        elif mode == 2:
-            self.model_combine = load_model("{}/model/{}".format(self.store_path, model_name))
-        else:
-            self.model = load_model("{}/model/{}".format(self.store_path, model_name))
+        # if(mode == 1):
+        self.model_custom = load_model("{}/model/{}".format(self.store_path, model_name))
+        # elif mode == 2:
+        self.model_combine = load_model("{}/model/{}".format(self.store_path, model_name))
+        # else:
+        self.model = load_model("{}/model/{}".format(self.store_path, model_name))
         # Check if model is loaded
         if (mode == 1 and self.model_custom is None) or (mode == 0 and self.model is None) or (mode == 2 and self.model_combine is None):
             self.sysmane.write_status("[ERROR] Model file is corrupted.")
@@ -1966,7 +1966,9 @@ class AiMane:
         # Mode 1: TFRecord dataset
         if mode is None:
             mode = self.training_config["model"]
+            self.sysmane.write_status("Testing model using mode {} (Select by current config)".format(mode))
         if mode == 1:
+            self.sysmane.write_status("Testing model using mode 1 (Select by user)")
             save_folder = self.training_config["result_folder_custom"]
             if self.training_config["usercontent"]:
                 self.training_config["classes"] = self.training_config["uc_classes_custom"]
@@ -1974,7 +1976,8 @@ class AiMane:
             else:
                 self.training_config["classes"] = self.training_config["classes_custom"]
                 self.training_config["class_names"] = self.training_config["class_names_custom"]
-        if mode == 2:
+        elif mode == 2:
+            self.sysmane.write_status("Testing model using mode 2 (Select by user)")
             save_folder = self.training_config["result_folder_combine"]
             if self.training_config["usercontent"]:
                 self.training_config["classes"] = self.training_config["uc_classes_combine"]
@@ -1983,6 +1986,7 @@ class AiMane:
                 self.training_config["classes"] = self.training_config["classes_combine"]
                 self.training_config["class_names"] = self.training_config["class_names_combine"]
         else :
+            self.sysmane.write_status("Testing model using mode 0 (Select by user)")
             save_folder = self.training_config["result_folder"]
             if self.training_config["usercontent"]:
                 self.training_config["classes"] = self.training_config["uc_classes"]
@@ -2009,7 +2013,7 @@ class AiMane:
         
         if mode == 1:
             model = self.model_custom
-        if mode == 2:
+        elif mode == 2:
             model = self.model_combine
         else:
             model = self.model
